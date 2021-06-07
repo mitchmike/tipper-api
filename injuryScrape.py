@@ -12,7 +12,10 @@ import re
 
 import base
 from player import Player
+from playerFantasy import PlayerFantasy
 from injury import Injury
+
+
 
 engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
 base.Base.metadata.create_all(engine, checkfirst=True)
@@ -76,7 +79,11 @@ def scrape_rows(teamtable):
     for row in teamtable[1:]:
         injuryRow = []
         for td in row.findAll('td'):
-            injuryRow.append(td.text.strip())
+            if td.find('a'):
+                #name_key from link
+                injuryRow.append(td.find('a').attrs['href'].split('--')[1])
+            else:
+                injuryRow.append(td.text.strip())
         rows.append(injuryRow)
     return rows
 
@@ -89,14 +96,11 @@ def populate_injury(injuryRow, team_name, headers):
         injury.recovered = False
         injury.updated_at = datetime.datetime.now()
         if key == 'player':
-            names = value.split()
-            first_name=names[0].strip()
-            last_name=" ".join(names[1:]).strip() if len(names) > 2 else names[1].strip()
-            player = session.execute(select(Player).filter_by(team=team_name,first_name=first_name,last_name=last_name)).first()
+            player = session.execute(select(Player).filter_by(team=team_name,name_key=value)).first()
             if player:
                 injury.player_id = player[0].id
             else:
-                print(f'no player for {injuryRow}, {first_name}, {last_name}')
+                print(f'no player for {injuryRow}, {value}')
         elif key == 'injury':
             injury.injury = value
         elif key == 'returning':

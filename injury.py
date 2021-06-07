@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 
 from base import Base
 
+
 class Injury(Base):
     __tablename__ = 'injuries'
     id = Column(Integer, Sequence('injury_id_seq'), primary_key=True)

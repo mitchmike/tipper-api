@@ -19,13 +19,14 @@ from playerFantasy import PlayerFantasy
 engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
 base.Base.metadata.create_all(engine, checkfirst=True)
 
+
 Session=sessionmaker(bind=engine)
 session = Session()
 
 def main():
     year=2021
     # TODO: parameterise round / year / find current round based on date / call to footywire.
-    for round in range(1,6):
+    for round in range(1,25):
         print(f'Scraping fantasy points for year: {year} and round {round}')
         url=f'https://www.footywire.com/afl/footy/dream_team_round?year={year}&round={round}&p=&s=T'
         res = requests.get(url)
@@ -59,12 +60,18 @@ def scrape_rows(table):
         fantasyRow = []
         for d in [x for x in row.children if x != '\n']:
             if d != '\n':
-                #dirty logic to get team name from link
+                #dirty logic to get team and player names from links
                 if (d.find('a')):
-                    href = d.find('a').attrs['href']
-                    if (re.match('^th',href)):
-                        fantasyRow.append('-'.join(href.split('?')[0].split('-')[1:]))
-                        continue
+                    try:
+                        href = d.find('a').attrs['href']
+                        if (re.match('^th',href)):
+                            fantasyRow.append('-'.join(href.split('?')[0].split('-')[1:]))
+                            continue
+                        if (re.match('^pr',href)):
+                            fantasyRow.append(href.split('--')[1])
+                            continue
+                    except KeyError:
+                        print(f'Cannot scrape cell due to missing href in link: {d}')
                 fantasyRow.append(d.text.strip().split('\n')[0])
         rows.append(fantasyRow)
     return rows
@@ -83,14 +90,11 @@ def populate_fantasy(fantasyRow, headers, year, round):
         key = headers[i].lower()
         value = fantasyRow[i]
         if key == 'player':
-            names = value.split()
-            first_name=names[0].strip()
-            last_name=" ".join(names[1:]).strip() if len(names) > 2 else names[1].strip()
-            player = session.execute(select(Player).filter_by(team=team_name,first_name=first_name,last_name=last_name)).first()
+            player = session.execute(select(Player).filter_by(team=team_name,name_key=value)).first()
             if player:
                 fantasy.player_id = player[0].id
             else:
-                print(f'no player for {fantasyRow}, {first_name}, {last_name}')
+                print(f'no player for {fantasyRow}, {value}')
         elif key == 'rank':
             fantasy.round_ranking = value
         elif key == 'round_salary':

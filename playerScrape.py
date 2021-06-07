@@ -9,7 +9,9 @@ import datetime
 import re
 
 import base
+
 from player import Player
+from playerFantasy import PlayerFantasy
 from injury import Injury
 
 engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
@@ -71,6 +73,10 @@ def scrape_player(row):
     playerRow = []
     for td in row.find_all('td'):
         [ x.decompose() for x in td.select('.playerflag')]
+        if td.find('a'):
+            #get players name key from link
+            playerRow.append(td.find('a').attrs['href'].split('--')[1])
+            continue
         playerRow.append(td.text.strip())
     return playerRow
 
@@ -85,8 +91,9 @@ def populate_player(playerRow,headers,team):
             if key == 'name':
                 if value == '':
                     raise Exception("Player row has no name")
-                player.first_name = value.split(',')[1].strip()
-                player.last_name = value.split(',')[0].strip()
+                player.name_key = value
+                player.first_name = value.split('-')[0].strip().title()
+                player.last_name = " ".join(value.split('-')[1:]).strip().title()
             elif key == 'number':
                 player.number = int(value) if value else None
             elif key == 'games':
@@ -124,10 +131,10 @@ def upsert_team(team,players):
     session = Session()
     playersFromDB = session.execute(select(Player).filter_by(team=team)).all()
     for player in players:
-        if player.first_name is None or player.last_name is None or player.team is None or player.DOB is None:
+        if player.name_key is None or player.team is None or player.DOB is None:
             print(f'Player is missing details required for persistance. doing nothing. Player: {player}')
             continue
-        dbMatches = [x[0] for x in playersFromDB if player.first_name == x[0].first_name and player.last_name == x[0].last_name and player.DOB == x[0].DOB]
+        dbMatches = [x[0] for x in playersFromDB if player.name_key == x[0].name_key and player.DOB == x[0].DOB]
         if len(dbMatches) > 0:
             # print(f'found {len(dbMatches)} matches for {player.first_name} {player.last_name}')
             # just add the id to our obj, then merge, then commit session
