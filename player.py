@@ -23,6 +23,7 @@ class Player(Base):
     updated_at = Column(DateTime)
     injuries = relationship("Injury", back_populates="player")
     fantasy_points = relationship("PlayerFantasy", back_populates="player")
+    supercoach_points = relationship("PlayerSupercoach", back_populates="player")
     __table_args__ = (UniqueConstraint('name_key', 'DOB', 'team', name='uix_1'), )
     def __repr__(self):
         return "<Player(id='%s', number='%s', team='%s', \

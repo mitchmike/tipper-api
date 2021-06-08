@@ -12,6 +12,7 @@ import base
 
 from player import Player
 from playerFantasy import PlayerFantasy
+from playerSupercoach import PlayerSupercoach
 from injury import Injury
 
 engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')

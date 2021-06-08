@@ -13,6 +13,7 @@ import re
 import base
 from player import Player
 from playerFantasy import PlayerFantasy
+from playerSupercoach import PlayerSupercoach
 from injury import Injury
 
 
