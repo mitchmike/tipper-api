@@ -1,9 +1,7 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, Boolean, Sequence, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Date, DateTime, Sequence, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from base import Base
-
-
 
 
 class Player(Base):
@@ -24,12 +22,12 @@ class Player(Base):
     injuries = relationship("Injury", back_populates="player")
     fantasy_points = relationship("PlayerFantasy", back_populates="player")
     supercoach_points = relationship("PlayerSupercoach", back_populates="player")
-    __table_args__ = (UniqueConstraint('name_key', 'DOB', 'team', name='uix_1'), )
+    __table_args__ = (UniqueConstraint('name_key', 'DOB', 'team', name='uix_1'),)
+
     def __repr__(self):
         return "<Player(id='%s', number='%s', team='%s', \
 first_name='%s', last_name='%s', name_key='%s', games='%s', \
 age='%s', DOB='%s', height='%s', weight='%s', \
-position='%s', updated_at='%s')>" % (self.id, self.number, self.team, self.first_name, 
-            self.last_name, self.name_key, self.games, self.age, self.DOB, self.height,
-        self.weight, self.position, self.updated_at)
-
+position='%s', updated_at='%s')>" % (self.id, self.number, self.team, self.first_name,
+                                     self.last_name, self.name_key, self.games, self.age, self.DOB, self.height,
+                                     self.weight, self.position, self.updated_at)

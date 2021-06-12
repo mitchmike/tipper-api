@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, Boolean, Sequence, UniqueConstraint, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Sequence, ForeignKey
 from sqlalchemy.orm import relationship
 
 from base import Base
@@ -13,7 +13,9 @@ class Injury(Base):
     recovered = Column(Boolean, default=False)
     updated_at = Column(DateTime)
     player = relationship("Player", back_populates="injuries")
+
     def __repr__(self):
         return "<Injury(id='%s', player_id='%s', injury='%s', \
-returning='%s',recovered='%s', updated_at='%s')>" % (self.id, self.player_id, self.injury, self.returning, self.recovered, self.updated_at)
+returning='%s',recovered='%s', updated_at='%s')>" % (self.id, self.player_id, self.injury, self.returning,
+                                                     self.recovered, self.updated_at)
 
