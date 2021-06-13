@@ -9,14 +9,13 @@ import datetime
 import re
 import os
 
-import base
-from player import Player
-from injury import Injury
-from playerFantasy import PlayerFantasy
-from playerSupercoach import PlayerSupercoach
+from datascrape.base import Base
+from datascrape.player import Player
+from datascrape.playerFantasy import PlayerFantasy
+from datascrape.playerSupercoach import PlayerSupercoach
 
 engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
-base.Base.metadata.create_all(engine, checkfirst=True)
+Base.metadata.create_all(engine, checkfirst=True)
 
 Session = sessionmaker(bind=engine)
 session = Session()

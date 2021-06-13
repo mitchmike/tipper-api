@@ -6,15 +6,15 @@ from sqlalchemy import select
 
 import datetime
 
-import base
-from player import Player
-from playerFantasy import PlayerFantasy
-from playerSupercoach import PlayerSupercoach
-from injury import Injury
+from datascrape.base import Base
+from datascrape.player import Player
+from datascrape.injury import Injury
+from datascrape.playerFantasy import PlayerFantasy
+from datascrape.playerSupercoach import PlayerSupercoach
 
 
 engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
-base.Base.metadata.create_all(engine, checkfirst=True)
+Base.metadata.create_all(engine, checkfirst=True)
 
 Session = sessionmaker(bind=engine)
 session = Session()

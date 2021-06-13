@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, Sequence, ForeignKey
 from sqlalchemy.orm import relationship
 
-from base import Base
+from datascrape.base import Base
 
 
 class Injury(Base):

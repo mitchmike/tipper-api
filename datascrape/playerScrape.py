@@ -6,15 +6,14 @@ from sqlalchemy import select
 import datetime
 import re
 
-import base
-
-from player import Player
-from playerFantasy import PlayerFantasy
-from playerSupercoach import PlayerSupercoach
-from injury import Injury
+from datascrape.base import Base
+from datascrape.player import Player
+from datascrape.injury import Injury
+from datascrape.playerFantasy import PlayerFantasy
+from datascrape.playerSupercoach import PlayerSupercoach
 
 engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
-base.Base.metadata.create_all(engine, checkfirst=True)
+Base.metadata.create_all(engine, checkfirst=True)
 
 TEAMS = [
     'carlton-blues',
@@ -67,6 +66,17 @@ def main():
         upsert_team(team, players)
 
 
+def process_row(row, headers, team, players):
+    player_row = scrape_player(row)
+    player = populate_player(player_row, headers, team)
+    if player:
+        players.append(player)
+    next_row = row.findNext('tr')
+    if len(next_row.select('.data')):
+        process_row(next_row, headers, team, players)
+    return players
+
+
 def scrape_player(row):
     player_row = []
     for td in row.find_all('td'):
@@ -113,17 +123,6 @@ def populate_player(player_row, headers, team):
         print(f'Exception processing row: {player_row}: {e}')
         player = None
     return player
-
-
-def process_row(row, headers, team, players):
-    player_row = scrape_player(row)
-    player = populate_player(player_row, headers, team)
-    if player:
-        players.append(player)
-    next_row = row.findNext('tr')
-    if len(next_row.select('.data')):
-        process_row(next_row, headers, team, players)
-    return players
 
 
 def upsert_team(team, players):
