@@ -58,7 +58,6 @@ def main():
         # Get the first row
         first_row = data[0].parent
         # Mapping of field names in html table in index order
-
         headers = [x.text for x in first_row.findPrevious('tr').find_all('a')]
         # recursive function to continue through rows until they no longer have data children
         players = process_row(first_row, headers, team, [])
@@ -67,8 +66,12 @@ def main():
 
 
 def process_row(row, headers, team, players):
-    player_row = scrape_player(row)
-    player = populate_player(player_row, headers, team)
+    try:
+        player_row = scrape_player(row)
+        player = populate_player(player_row, headers, team)
+    except ValueError as e:
+        print(f'Exception processing row: {player_row}: {e}')
+        player = None
     if player:
         players.append(player)
     next_row = row.findNext('tr')
@@ -90,38 +93,34 @@ def scrape_player(row):
 
 
 def populate_player(player_row, headers, team):
-    try:
-        player = Player()
-        player.team = team
-        player.updated_at = datetime.datetime.now()
-        for i in range(len(player_row)):
-            key = PLAYER_HEADER_MAP[headers[i]]
-            value = player_row[i]
-            if key == 'name':
-                if value == '':
-                    raise Exception("Player row has no name")
-                player.name_key = value
-                player.first_name = value.split('-')[0].strip().title()
-                player.last_name = " ".join(value.split('-')[1:]).strip().title()
-            elif key == 'number':
-                player.number = int(value) if value else None
-            elif key == 'games':
-                player.games = int(value) if value else None
-            elif key == 'age':
-                player.age = value
-            elif key == 'DOB':
-                if value == '' or value is None:
-                    raise Exception("Player not initialised with DateOfBirth yet")
-                player.DOB = datetime.datetime.strptime(value, '%d %b %Y').date()
-            elif key == 'height':
-                player.height = int(re.sub("[^0-9]", "", value)) if value else None
-            elif key == 'weight':
-                player.weight = int(re.sub("[^0-9]", "", value)) if value else None
-            elif key == 'position':
-                player.position = value
-    except Exception as e:
-        print(f'Exception processing row: {player_row}: {e}')
-        player = None
+    player = Player()
+    player.team = team
+    player.updated_at = datetime.datetime.now()
+    for i in range(len(player_row)):
+        key = PLAYER_HEADER_MAP[headers[i]]
+        value = player_row[i]
+        if key == 'name':
+            if value == '':
+                raise ValueError("Player row has no name")
+            player.name_key = value
+            player.first_name = value.split('-')[0].strip().title()
+            player.last_name = " ".join(value.split('-')[1:]).strip().title()
+        elif key == 'number':
+            player.number = int(value) if value else None
+        elif key == 'games':
+            player.games = int(value) if value else None
+        elif key == 'age':
+            player.age = value
+        elif key == 'DOB':
+            if value == '' or value is None:
+                raise ValueError("Player row has no DateOfBirth")
+            player.DOB = datetime.datetime.strptime(value, '%d %b %Y').date()
+        elif key == 'height':
+            player.height = int(re.sub("[^0-9]", "", value)) if value else None
+        elif key == 'weight':
+            player.weight = int(re.sub("[^0-9]", "", value)) if value else None
+        elif key == 'position':
+            player.position = value
     return player
 
 
@@ -135,7 +134,6 @@ def upsert_team(team, players):
             continue
         db_matches = [x[0] for x in players_from_db if player.name_key == x[0].name_key and player.DOB == x[0].DOB]
         if len(db_matches) > 0:
-            # print(f'found {len(dbMatches)} matches for {player.first_name} {player.last_name}')
             # just add the id to our obj, then merge, then commit session
             player.id = db_matches[0].id
         else:
