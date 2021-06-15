@@ -2,7 +2,14 @@ import datetime
 import unittest
 import bs4
 import os
+import copy
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import select
+from unittest.mock import patch
 from datascrape import playerScrape
+from datascrape import base
+from datascrape.player import Player
 
 
 class TestPlayerScrape(unittest.TestCase):
@@ -26,6 +33,14 @@ class TestPlayerScrape(unittest.TestCase):
                 <td class="data">
                 Forward
                 </td></tr>'''
+
+
+    @classmethod
+    def setUpClass(cls):
+        TestPlayerScrape._engine = create_engine(
+            'postgresql://postgres:oscar12!@localhost:5432/tiplos-test?gssencmode=disable'
+        )
+        base.Base.metadata.create_all(TestPlayerScrape._engine, checkfirst=True)
 
     def setUp(self):
         # Stub html file used - to refresh file run get_html.py with 'players' as first arg
@@ -128,19 +143,61 @@ class TestPlayerScrape(unittest.TestCase):
             self.assertIsNone(player)
 
     def test_upsert_team_new_player(self):
-        None
+        players = [self.player]
+        playerScrape.upsert_team(self.TEAM, players, TestPlayerScrape._engine)
+        Session = sessionmaker(bind=TestPlayerScrape._engine)
+        session = Session()
+        players_in_db = session.execute(select(Player).filter_by(team=self.TEAM)).all()
+        print(players_in_db)
+        self.assertEqual(len(players_in_db), 1)
+        self.assertEqual(players_in_db[0][0].id, 1)
+        self.assertEqual(players_in_db[0][0].name_key, 'jake-aarts')
+        self.assertEqual(players_in_db[0][0].DOB, datetime.date(1994, 12, 8))
+        session.close()
 
     def test_upsert_team_player_already_exists(self):
-        None
+        Session = sessionmaker(bind=TestPlayerScrape._engine)
+        test_session = Session()
+        player_copy = copy.deepcopy(self.player)
+        player_copy.id = 25
+        player_copy.games = 10000
+        player_copy.position = "all round good guy"
+        test_session.add(player_copy)
+        test_session.commit()
+        test_session.close()
+
+        players = [self.player]
+        playerScrape.upsert_team(self.TEAM, players, TestPlayerScrape._engine)
+        test_session2 = Session()
+        players_in_db = test_session2.execute(select(Player).filter_by(team=self.TEAM)).all()
+        print(players_in_db)
+        self.assertEqual(len(players_in_db), 1)
+        self.assertEqual(players_in_db[0][0].id, 25)
+        self.assertEqual(players_in_db[0][0].name_key, self.player.name_key)
+        self.assertEqual(players_in_db[0][0].DOB, self.player.DOB)
+        self.assertEqual(players_in_db[0][0].games, self.player.games)
+        self.assertEqual(players_in_db[0][0].position, self.player.position)
+        test_session2.close()
 
     def test_upsert_team_exception(self):
         None
 
-    def test_full_player_scrape(self):
-        None
+    def test_upsert_team_full_team(self):
+        players = playerScrape.process_row(self.first_row, self.headers, self.TEAM, [])
+        self.assertEqual(len(players), 43)
+        playerScrape.upsert_team(self.TEAM, players, TestPlayerScrape._engine)
+        Session = sessionmaker(bind=TestPlayerScrape._engine)
+        session = Session()
+        players_in_db = session.execute(select(Player).filter_by(team=self.TEAM)).all()
+        print(players_in_db)
 
-    def tearDown(self) -> None:
-        None
+    def test_full_player_scrape(self):
+        players = playerScrape.process_row(self.first_row, self.headers, self.TEAM, [])
+        self.assertEqual(len(players), 43)
+
+    @classmethod
+    def tearDown(cls):
+        base.Base.metadata.drop_all(TestPlayerScrape._engine, checkfirst=False)
 
 
 if __name__ == '__main__':

@@ -12,8 +12,7 @@ from datascrape.injury import Injury
 from datascrape.playerFantasy import PlayerFantasy
 from datascrape.playerSupercoach import PlayerSupercoach
 
-engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
-Base.metadata.create_all(engine, checkfirst=True)
+
 
 TEAMS = [
     'carlton-blues',
@@ -50,6 +49,8 @@ PLAYER_HEADER_MAP = {
 
 
 def main():
+    engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
+    Base.metadata.create_all(engine, checkfirst=True)
     for team in TEAMS:
         print(f'Processing players for {team}...')
         res = requests.get(f'https://www.footywire.com/afl/footy/tp-{team}')
@@ -62,7 +63,7 @@ def main():
         # recursive function to continue through rows until they no longer have data children
         players = process_row(first_row, headers, team, [])
         print(f'Found {len(players)} records for team: {team}. Upserting to database')
-        upsert_team(team, players)
+        upsert_team(team, players, engine)
 
 
 def process_row(row, headers, team, players):
@@ -124,7 +125,7 @@ def populate_player(player_row, headers, team):
     return player
 
 
-def upsert_team(team, players):
+def upsert_team(team, players, engine):
     Session = sessionmaker(bind=engine)
     session = Session()
     players_from_db = session.execute(select(Player).filter_by(team=team)).all()
