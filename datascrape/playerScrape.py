@@ -127,26 +127,25 @@ def populate_player(player_row, headers, team):
 
 def upsert_team(team, players, engine):
     Session = sessionmaker(bind=engine)
-    session = Session()
-    players_from_db = session.execute(select(Player).filter_by(team=team)).all()
-    for player in players:
-        if player.name_key is None or player.team is None or player.DOB is None:
-            print(f'Player is missing details required for persistance. doing nothing. Player: {player}')
-            continue
-        db_matches = [x[0] for x in players_from_db if player.name_key == x[0].name_key and player.DOB == x[0].DOB]
-        if len(db_matches) > 0:
-            # just add the id to our obj, then merge, then commit session
-            player.id = db_matches[0].id
-        else:
-            print(f'New player: {player.first_name} {player.last_name} will be added to DB')
-        session.merge(player)  # merge updates if id exists and adds new if it doesnt
-    try:
-        session.commit()
-    except Exception as e:
-        print(f'Could not commit for team: {team} due to exception: {e} \n Rolling back')
-        session.rollback()
-    finally:
-        session.close()
+    with Session() as session:
+        players_from_db = session.execute(select(Player).filter_by(team=team)).all()
+        for player in players:
+            if player.name_key is None or player.team is None or player.DOB is None:
+                print(f'Player is missing details required for persistance. doing nothing. Player: {player}')
+                continue
+            db_matches = [x[0] for x in players_from_db if player.name_key == x[0].name_key and player.DOB == x[0].DOB]
+            if len(db_matches) > 0:
+                # just add the id to our obj, then merge, then commit session
+                player.id = db_matches[0].id
+            else:
+                print(f'New player: {player.first_name} {player.last_name} will be added to DB')
+            try:
+                session.merge(player)  # merge updates if id exists and adds new if it doesnt
+                session.commit()
+            except Exception as e:
+                print(f'Caught exception {e} \n'
+                      f'Rolling back {player}')
+                session.rollback()
 
 
 if __name__ == '__main__':

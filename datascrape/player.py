@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, Sequence, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Date, DateTime, Sequence, UniqueConstraint, CheckConstraint
 from sqlalchemy.orm import relationship
 from datascrape.base import Base
 
@@ -8,12 +8,12 @@ class Player(Base):
     id = Column(Integer, Sequence('player_id_seq'), primary_key=True)
     first_name = Column(String)
     last_name = Column(String)
-    name_key = Column(String)
+    name_key = Column(String, CheckConstraint("name_key <> ''", name='name_key_not_empty'), nullable=False)
     number = Column(Integer)
     team = Column(String)
     games = Column(Integer)
     age = Column(String)
-    DOB = Column(Date)
+    DOB = Column(Date, nullable=False)
     height = Column(Integer)
     weight = Column(Integer)
     position = Column(String)
