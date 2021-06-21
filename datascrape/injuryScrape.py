@@ -13,12 +13,6 @@ from datascrape.playerFantasy import PlayerFantasy
 from datascrape.playerSupercoach import PlayerSupercoach
 
 
-engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
-Base.metadata.create_all(engine, checkfirst=True)
-
-Session = sessionmaker(bind=engine)
-session = Session()
-
 HEADER_MAP = {
     'Player': 'player',
     'Injury': 'injury',
@@ -49,6 +43,8 @@ TEAMS = {
 
 
 def main():
+    engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
+    Base.metadata.create_all(engine, checkfirst=True)
     res = requests.get(f'https://www.footywire.com/afl/footy/injury_list')
     soup = bs4.BeautifulSoup(res.text, 'html.parser')
     data = soup.select('.tbtitle')
@@ -65,10 +61,9 @@ def main():
         data_rows = scrape_rows(team_table)
         print(f'Found {len(data_rows)} injuries for {team_name}')
         for injury in data_rows:
-            injuries.append(populate_injury(injury, team_name, headers))
+            injuries.append(populate_injury(injury, team_name, headers, engine))
     # persist all injuries in one go
-    upsert_injuries(injuries)
-    session.close()
+    upsert_injuries(injuries, engine)
 
 
 def scrape_rows(team_table):
@@ -85,7 +80,8 @@ def scrape_rows(team_table):
     return rows
 
 
-def populate_injury(injury_row, team_name, headers):
+def populate_injury(injury_row, team_name, headers, engine):
+    Session = sessionmaker(bind=engine)
     injury = Injury()
     for i in range(len(injury_row)):
         key = HEADER_MAP[headers[i]]
@@ -93,11 +89,12 @@ def populate_injury(injury_row, team_name, headers):
         injury.recovered = False
         injury.updated_at = datetime.datetime.now()
         if key == 'player':
-            player = session.execute(select(Player).filter_by(team=team_name, name_key=value)).first()
-            if player:
-                injury.player_id = player[0].id
-            else:
-                print(f'no player for {injury_row}, {value}')
+            with Session() as session:
+                player = session.execute(select(Player).filter_by(team=team_name, name_key=value)).first()
+                if player:
+                    injury.player_id = player[0].id
+                else:
+                    print(f'no player for {injury_row}, {value}')
         elif key == 'injury':
             injury.injury = value
         elif key == 'returning':
@@ -105,23 +102,25 @@ def populate_injury(injury_row, team_name, headers):
     return injury
 
 
-def upsert_injuries(injury_list):
+def upsert_injuries(injury_list, engine):
+    Session = sessionmaker(bind=engine)
     print(f'Upserting {len(injury_list)} records to database')
-    injuries_persisted = session.execute(select(Injury)).all()
-    for injury in injuries_persisted:
-        # all are recovered unless they appear in the scrape results
-        injury[0].recovered = True
-    for injury in injury_list:
-        db_match = [x[0] for x in injuries_persisted if injury.player_id == x[0].player_id]
-        # just add the id to our obj, then merge, then commit session
-        if db_match:
-            injury.id = db_match[0].id
-        session.merge(injury)  # merge updates if id exists and adds new if it doesnt
-    try:
-        session.commit()
-    except Exception as e:
-        print(f'Could not commit injuries: {injury_list} due to exception: {e} \n Rolling back')
-        session.rollback()
+    with Session() as upsert_session:
+        injuries_persisted = upsert_session.execute(select(Injury)).all()
+        for injury in injuries_persisted:
+            # all are recovered unless they appear in the scrape results
+            injury[0].recovered = True
+        for injury in injury_list:
+            db_match = [x[0] for x in injuries_persisted if injury.player_id == x[0].player_id]
+            # just add the id to our obj, then merge, then commit session
+            if db_match:
+                injury.id = db_match[0].id
+            upsert_session.merge(injury)  # merge updates if id exists and adds new if it doesnt
+        try:
+            upsert_session.commit()
+        except Exception as e:
+            print(f'Could not commit injuries: {injury_list} due to exception: {e} \n Rolling back')
+            upsert_session.rollback()
 
 
 if __name__ == '__main__':
