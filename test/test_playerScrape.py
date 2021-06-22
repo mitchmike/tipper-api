@@ -156,26 +156,24 @@ class TestPlayerScrape(unittest.TestCase):
             self.assertEqual(db_player.DOB, datetime.date(1994, 12, 8))
 
     def test_upsert_team_player_already_exists(self):
-        test_session = TestPlayerScrape.Session()
-        player_copy = copy.deepcopy(self.player)
-        player_copy.id = 25
-        player_copy.games = 10000
-        player_copy.position = "all round good guy"
-        test_session.add(player_copy)
-        test_session.commit()
-        test_session.close()
+        with TestPlayerScrape.Session() as test_session:
+            player_copy = copy.deepcopy(self.player)
+            player_copy.id = 25
+            player_copy.games = 10000
+            player_copy.position = "all round good guy"
+            test_session.add(player_copy)
+            test_session.commit()
 
         players = [self.player]
         playerScrape.upsert_team(self.TEAM, players, TestPlayerScrape._engine)
-        test_session2 = TestPlayerScrape.Session()
-        players_in_db = test_session2.execute(select(Player).filter_by(team=self.TEAM)).all()
-        self.assertEqual(len(players_in_db), 1)
-        self.assertEqual(players_in_db[0][0].id, 25)
-        self.assertEqual(players_in_db[0][0].name_key, self.player.name_key)
-        self.assertEqual(players_in_db[0][0].DOB, self.player.DOB)
-        self.assertEqual(players_in_db[0][0].games, self.player.games)
-        self.assertEqual(players_in_db[0][0].position, self.player.position)
-        test_session2.close()
+        with TestPlayerScrape.Session() as test_session2:
+            players_in_db = test_session2.execute(select(Player).filter_by(team=self.TEAM)).all()
+            self.assertEqual(len(players_in_db), 1)
+            self.assertEqual(players_in_db[0][0].id, 25)
+            self.assertEqual(players_in_db[0][0].name_key, self.player.name_key)
+            self.assertEqual(players_in_db[0][0].DOB, self.player.DOB)
+            self.assertEqual(players_in_db[0][0].games, self.player.games)
+            self.assertEqual(players_in_db[0][0].position, self.player.position)
 
     def test_upsert_team_exception_invalid_name_key(self):
         players = playerScrape.process_row(self.first_row, self.headers, self.TEAM, [])

@@ -1,11 +1,10 @@
+import copy
 import datetime
 import unittest
 import bs4
 import os
-import copy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import select
 from datascrape import injuryScrape
 from datascrape import base
 from datascrape.player import Player
@@ -51,6 +50,9 @@ class TestInjuryScrape(unittest.TestCase):
         with open(self.HTML_SOURCE_FILE, 'r') as file:
             soup = bs4.BeautifulSoup(file.read(), 'html.parser')
 
+        # add player to put injury against
+        add_player_to_db(5, 'daniel-talia', 'adelaide-crows')
+
         data = soup.select('.tbtitle')[0]
         self.team_name = TEAMS[data.text.split('(')[0].strip()]
         self.team_table = data.parent.findNext('tr').findAll('tr')
@@ -58,7 +60,9 @@ class TestInjuryScrape(unittest.TestCase):
         for header in self.team_table[0].findAll('td'):
             self.headers.append(header.text.strip())
         data_rows = injuryScrape.scrape_rows(self.team_table)
-        self.injury = data_rows[0]
+        self.injury_row = data_rows[0]
+        self.injury = injuryScrape.populate_injury(self.injury_row, self.TEAM, self.headers, TestInjuryScrape._engine)
+        self.injury.player_id = 5
 
     def test_scrape_row(self):
         one_row_soup = bs4.BeautifulSoup(self.HTML_ONE_ROW, 'html.parser')
@@ -77,7 +81,10 @@ class TestInjuryScrape(unittest.TestCase):
         self.assertEqual(injury_row[1], 'Foot')
         self.assertEqual(injury_row[2], 'TBC')
 
-    def test_populate_injury(self):
+    def test_populate_injury_player_doesnt_exist(self):
+        with TestInjuryScrape.Session() as cleanup_session:
+            cleanup_session.query(Player).delete()
+            cleanup_session.commit()
         test_injury_row = ['daniel-talia', 'Foot', 'TBC']
         injury = injuryScrape.populate_injury(test_injury_row, self.TEAM, self.headers, TestInjuryScrape._engine)
         self.assertIsNotNone(injury)
@@ -87,14 +94,7 @@ class TestInjuryScrape(unittest.TestCase):
         self.assertEqual(injury.recovered, False)
 
     def test_populate_injury_player_exists(self):
-        player = Player()
-        player.name_key = 'daniel-talia'
-        player.id = 5
-        player.DOB = datetime.date(1990, 1, 1)
-        player.team = 'adelaide-crows'
-        with TestInjuryScrape.Session() as player_session:
-            player_session.add(player)
-            player_session.commit()
+        # player is defined in setup function
         test_injury_row = ['daniel-talia', 'Foot', 'TBC']
         injury = injuryScrape.populate_injury(test_injury_row, self.TEAM, self.headers, TestInjuryScrape._engine)
         self.assertIsNotNone(injury)
@@ -104,25 +104,78 @@ class TestInjuryScrape(unittest.TestCase):
         self.assertEqual(injury.recovered, False)
 
     def test_upsert_injuries(self):
-        None
+        injury_list = [self.injury]
+        injuryScrape.upsert_injuries(injury_list, TestInjuryScrape._engine)
+        with TestInjuryScrape.Session() as session:
+            injuries_in_db = session.query(Injury).all()
+            self.assertEqual(len(injuries_in_db), 1)
+            db_injury = injuries_in_db[0]
+            self.assertEqual(db_injury.player_id, 5)
+            self.assertEqual(db_injury.injury, 'Foot')
+            self.assertEqual(db_injury.returning, 'TBC')
+            self.assertEqual(db_injury.recovered, False)
 
     def test_upsert_injury_already_exists(self):
-        None
+        # insert copy of injury with different details into db
+        with TestInjuryScrape.Session() as test_session:
+            injury_copy = copy.deepcopy(self.injury)
+            injury_copy.injury = 'Hand'
+            injury_copy.recovered = True
+            test_session.add(injury_copy)
+            test_session.commit()
 
-    def test_upsert_injury_same_player_already_with_different_injury(self):
-        None
+        injury_list = [self.injury]
+        injuryScrape.upsert_injuries(injury_list, TestInjuryScrape._engine)
+        with TestInjuryScrape.Session() as session:
+            injuries_in_db = session.query(Injury).all()
+            self.assertEqual(len(injuries_in_db), 1)
+            db_injury = injuries_in_db[0]
+            self.assertEqual(db_injury.player_id, 5)
+            self.assertEqual(db_injury.injury, 'Foot')
+            self.assertEqual(db_injury.returning, 'TBC')
+            self.assertEqual(db_injury.recovered, False)
 
     def test_upsert_injury_recovered_if_player_not_in_latest_scrape(self):
-        None
+        add_player_to_db(3, 'mikky-mo', 'adelaide-crows')
+        with TestInjuryScrape.Session() as test_session:
+            injury2 = Injury()
+            injury2.player_id = 3  # different to the id in the scraped injury list
+            injury2.injury = 'Hand'
+            injury2.recovered = False  # this should change after we run the upsert function
+            test_session.add(injury2)
+            test_session.commit()
+
+        injury_list = [self.injury]
+        injuryScrape.upsert_injuries(injury_list, TestInjuryScrape._engine)
+        with TestInjuryScrape.Session() as session:
+            injuries_in_db = session.query(Injury).all()
+            self.assertEqual(len(injuries_in_db), 2)
+            recovered_injury = injuries_in_db[0]
+            self.assertEqual(recovered_injury.player_id, 3)
+            self.assertEqual(recovered_injury.injury, 'Hand')
+            self.assertEqual(recovered_injury.recovered, True)
 
     def tearDown(self):
         with TestInjuryScrape.Session() as cleanup_session:
+            cleanup_session.query(Injury).delete()
             cleanup_session.query(Player).delete()
             cleanup_session.commit()
 
     @classmethod
     def tearDownClass(cls):
         base.Base.metadata.drop_all(TestInjuryScrape._engine, checkfirst=False)
+
+
+def add_player_to_db(player_id, name, team):
+    # add player to put injury against
+    player = Player()
+    player.name_key = name
+    player.id = player_id
+    player.DOB = datetime.date(1990, 1, 1)
+    player.team = team
+    with TestInjuryScrape.Session() as player_session:
+        player_session.add(player)
+        player_session.commit()
 
 
 if __name__ == '__main__':
