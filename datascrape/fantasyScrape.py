@@ -130,9 +130,8 @@ def insert_fantasies(mode, fantasies, fantasy_year, fantasy_round, engine):
                         if fantasy.player_id == x[0].player_id
                         and fantasy.round == x[0].round
                         and fantasy.year == x[0].year]
-            # just add the id to our obj, then merge, then commit session
             if db_match:
-                fantasy.id = db_match[0].id
+                fantasy.id = db_match[0].id  # just add the id to our obj
                 continue  # do nothing
             session.add(fantasy)  # add only if new
         try:
