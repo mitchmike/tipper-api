@@ -16,7 +16,10 @@ REQUEST_MAPS = [
      'link': 'https://www.footywire.com/afl/footy/dream_team_round?year=2021&round=1&p=&s=T'},
     {'file': 'supercoach',
      'file_name': '2021-r1-supercoach-points.html',
-     'link': 'https://www.footywire.com/afl/footy/supercoach_round?year=2021&round=1&p=&s=T'}
+     'link': 'https://www.footywire.com/afl/footy/supercoach_round?year=2021&round=1&p=&s=T'},
+    {'file': 'games',
+     'file_name': '2019-games.html',
+     'link': 'https://www.footywire.com/afl/footy/ft_match_list?year=2019'}
 ]
 AVAILABLE_FILES = [x['file'] for x in REQUEST_MAPS]
 

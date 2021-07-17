@@ -3,27 +3,38 @@ import bs4
 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
+from sqlalchemy import select
 import datetime
 
 from datascrape.repositories.base import Base
 from datascrape.repositories.game import Game
 
+FINAL_ROUNDS = {
+    'qualifying final': 50,
+    'elimination final': 51,
+    'semi final': 52,
+    'preliminary final': 53,
+    'grand final': 54
+}
 
 def main():
     engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
     Base.metadata.create_all(engine, checkfirst=True)
 
-    year = '2021'
-    res = requests.get(f'https://www.footywire.com/afl/footy/ft_match_list?year={year}')
-    soup = bs4.BeautifulSoup(res.text, 'html.parser')
-    data = soup.select('.data')
-    # Get the first row
-    first_row = data[0].parent
-    # Mapping of field names in html table in index order
-    headers = [x.text.split('\n')[0].strip() for x in first_row.findPrevious('tr').find_all(['td','th'])]
-    # recursive function to continue through rows until they no longer have data children
-    games = process_row(first_row, headers, [], year, 1)
-    upsert_games(games, year, engine)
+    for year in range(2015, 2022):
+        start = datetime.datetime.now()
+        print(f'Processing games from footywire for year: {year}')
+        res = requests.get(f'https://www.footywire.com/afl/footy/ft_match_list?year={year}')
+        soup = bs4.BeautifulSoup(res.text, 'html.parser')
+        data = soup.select('.data')
+        # Get the first row
+        first_row = data[0].parent
+        # Mapping of field names in html table in index order
+        headers = [x.text.split('\n')[0].strip() for x in first_row.findPrevious('tr').find_all(['td', 'th'])]
+        # recursive function to continue through rows until they no longer have data children
+        games = process_row(first_row, headers, [], year, 1)
+        upsert_games(games, engine)
+        print(f'Time taken: {datetime.datetime.now() - start}')
 
 
 def process_row(row, headers, games, year, round_number):
@@ -37,7 +48,11 @@ def process_row(row, headers, games, year, round_number):
         if game:
             games.append(game)
     elif len(row.select('.tbtitle')): #round header
-        round_number = int(row.select('.tbtitle')[0].text.strip().split()[1])
+        round_string = row.select('.tbtitle')[0].text.strip()
+        if 'final' in round_string.lower():
+            round_number = FINAL_ROUNDS[round_string.lower()]
+        else:
+            round_number = int(row.select('.tbtitle')[0].text.strip().split()[1])
     next_row = row.findNext('tr')
     if next_row:
         process_row(next_row, headers, games, year, round_number)
@@ -62,8 +77,7 @@ def scrape_game(row):
                 # ignore player links in table
                 game_row.append(td.text.strip())
             else:
-                print('Unexpected number/format of links found in td - please check data source '
-                      f'- appending raw text from cell {td}')
+                # no matching link structure - just append raw text
                 game_row.append(td.text.strip())
             continue
         game_row.append(td.text.strip())
@@ -73,14 +87,14 @@ def scrape_game(row):
 def populate_game(game_row, headers, year, round_number):
     game = Game()
     game.year = year
-    game.round = round_number
+    game.round_number = round_number
     game.updated_at = datetime.datetime.now()
     for i in range(len(game_row)):
         key = headers[i]
         value = game_row[i]
         if key == 'Date':
             if value:
-                game.date_time = datetime.datetime.strptime(value + year, '%a %d %b %I:%M%p%Y')
+                game.date_time = datetime.datetime.strptime(value + str(year), '%a %d %b %I:%M%p%Y')
         elif key == 'Home v Away Teams':
             game.home_team = value[0]
             game.away_team = value[1]
@@ -93,11 +107,11 @@ def populate_game(game_row, headers, year, round_number):
                 game.crowd = int(value)
         elif key == 'Result':
             if len(value) == 3:
-                game.id = value[0]
-                game.home_score = value[1]
-                game.away_score = value[2]
+                game.id = int(value[0])
+                game.home_score = int(value[1])
+                game.away_score = int(value[2])
             else:
-                print(f'Game has not happened yet {game}. ignoring as we have no results.')
+                # Game has not happened yet - ignoring as we have no results.
                 return None
         elif key == 'Disposals':
             #Not interested in this field
@@ -108,18 +122,18 @@ def populate_game(game_row, headers, year, round_number):
     return game
 
 
-def upsert_games(games, year, engine):
+def upsert_games(games, engine):
     print(f'Upserting {len(games)} game(s) to the database')
     Session = sessionmaker(bind=engine)
     with Session() as session:
-        # games_from_db = session.execute(select(Game).filter_by(year=year)).all()
         for game in games:
             if game.id is None or game.home_team is None or game.away_team is None:
                 print(f'Game is missing details required for persistance. doing nothing. Game: {game}')
                 continue
+            if not session.execute(select(Game).filter_by(id=game.id)).first():
+                print(f'New game: year: {game.year}, round: {game.round_number}, {game.home_team} v {game.away_team} '
+                      f'will be added to DB')
 
-            print(f'New game: year: {game.year}, round: {game.round}, {game.home_team} v {game.away_team} '
-                  f'will be added to DB')
             try:
                 session.merge(game)
                 session.commit()
@@ -130,4 +144,6 @@ def upsert_games(games, year, engine):
 
 
 if __name__ == '__main__':
+    start_all = datetime.datetime.now()
     main()
+    print(f'Total time taken: {datetime.datetime.now() - start_all}')

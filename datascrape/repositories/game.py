@@ -13,7 +13,7 @@ class Game(Base):
     away_score = Column(Integer)
     date_time = Column(DateTime)
     year = Column(Integer)
-    round = Column(Integer)
+    round_number = Column(Integer)
     updated_at = Column(DateTime)
 
     def __repr__(self):
