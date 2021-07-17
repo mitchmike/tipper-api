@@ -6,13 +6,8 @@ from sqlalchemy import select
 import datetime
 import re
 
-from datascrape.base import Base
-from datascrape.player import Player
-from datascrape.injury import Injury
-from datascrape.playerFantasy import PlayerFantasy
-from datascrape.playerSupercoach import PlayerSupercoach
-
-
+from datascrape.repositories.base import Base
+from datascrape.repositories.player import Player
 
 TEAMS = [
     'carlton-blues',

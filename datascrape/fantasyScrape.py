@@ -9,10 +9,10 @@ import datetime
 import re
 import os
 
-from datascrape.base import Base
-from datascrape.player import Player
-from datascrape.playerFantasy import PlayerFantasy
-from datascrape.playerSupercoach import PlayerSupercoach
+from datascrape.repositories.base import Base
+from datascrape.repositories.player import Player
+from datascrape.repositories.playerFantasy import PlayerFantasy
+from datascrape.repositories.playerSupercoach import PlayerSupercoach
 
 
 def main():

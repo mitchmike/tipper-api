@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, Float, DateTime, Sequence, ForeignKey
 from sqlalchemy.dialects.postgresql import MONEY
 from sqlalchemy.orm import relationship
 
-from datascrape.base import Base
+from datascrape.repositories.base import Base
 
 
 class PlayerFantasy(Base):

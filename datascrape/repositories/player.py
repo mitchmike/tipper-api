@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Date, DateTime, Sequence, UniqueConstraint, CheckConstraint
 from sqlalchemy.orm import relationship
-from datascrape.base import Base
+from datascrape.repositories.base import Base
 
 
 class Player(Base):

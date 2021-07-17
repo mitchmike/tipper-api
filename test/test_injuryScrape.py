@@ -6,9 +6,9 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datascrape import injuryScrape
-from datascrape import base
-from datascrape.player import Player
-from datascrape.injury import Injury
+from datascrape.repositories import base
+from datascrape.repositories.player import Player
+from datascrape.repositories.injury import Injury
 from datascrape.injuryScrape import TEAMS
 
 
