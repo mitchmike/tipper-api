@@ -96,8 +96,9 @@ def populate_game(game_row, headers, year, round_number):
             if value:
                 game.date_time = datetime.datetime.strptime(value + str(year), '%a %d %b %I:%M%p%Y')
         elif key == 'Home v Away Teams':
-            game.home_team = value[0]
-            game.away_team = value[1]
+            if type(value) == list:
+                game.home_team = value[0]
+                game.away_team = value[1]
         elif key == 'Venue':
             if value == 'BYE':
                 return None
@@ -133,7 +134,6 @@ def upsert_games(games, engine):
             if not session.execute(select(Game).filter_by(id=game.id)).first():
                 print(f'New game: year: {game.year}, round: {game.round_number}, {game.home_team} v {game.away_team} '
                       f'will be added to DB')
-
             try:
                 session.merge(game)
                 session.commit()

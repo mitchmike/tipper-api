@@ -22,4 +22,4 @@ venue='%s', crowd='%s', crowd='%s', home_score='%s', \
 away_score='%s', date='%s', year='%s', round='%s', \
 updated_at='%s')>" % (self.id, self.home_team, self.away_team, self.venue,
                                      self.crowd, self.crowd, self.home_score, self.away_score, self.date_time, self.year,
-                                     self.round, self.updated_at)
+                                     self.round_number, self.updated_at)
