@@ -8,24 +8,52 @@ import datetime
 from datascrape.repositories.base import Base
 from datascrape.repositories.player import Player
 from datascrape.repositories.game import Game
+from datascrape.repositories.milestone import Milestone
 from datascrape.repositories.match_stats_player import MatchStatsPlayer
 
 engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
+Session = sessionmaker(bind=engine)
+milestone_session = Session()
 
 
 def main():
     Base.metadata.create_all(engine, checkfirst=True)
-    match_id = 9721
-    res_basic = requests.get(f'https://www.footywire.com/afl/footy/ft_match_statistics?mid={match_id}')
-    res_advanced = requests.get(f'https://www.footywire.com/afl/footy/ft_match_statistics?mid={match_id}&advv=Y')
-    for res in [res_basic, res_advanced]:
-        print(f'scraping from {res.url}')
-        soup = bs4.BeautifulSoup(res.text, 'html.parser')
-        data = soup.select('.statdata')
-        first_row = data[0].parent
-        headers = [x.text for x in first_row.findPrevious('tr').find_all('td')]
-        match_stats_list = process_row(first_row, headers, [], match_id)
-        upsert_match_stats(match_id, match_stats_list)
+
+    year = 2021
+    for round_number in range(60):
+        with Session() as games_session:
+            # get match ids for year / round
+            matches = games_session.execute(select(Game.id).filter_by(year=year, round_number=round_number)).scalars().all()
+        if len(matches) == 0:
+            continue
+        else:
+            print(f'Scraping match stats for year: {year}, round: {round_number}')
+        for match_id in matches:
+            add_milestone(f"match_start_{match_id}")
+            for mode in ['basic', 'advanced']:  # advanced stats on 2nd link
+                if mode == 'basic':
+                    url = f'https://www.footywire.com/afl/footy/ft_match_statistics?mid={match_id}'
+                else:
+                    url = f'https://www.footywire.com/afl/footy/ft_match_statistics?mid={match_id}&advv=Y'
+                print(f'scraping from {url}')
+                add_milestone(f'request_start_{match_id}_{mode}')
+                res = requests.get(url)
+                add_milestone(f'request_finished_{match_id}_{mode}')
+                soup = bs4.BeautifulSoup(res.text, 'html.parser')
+                for i in [0, 1]:  # both teams on match stats page
+                    print(f'scraping for team: {"home" if i == 0 else "away"}')
+                    data = soup.select('.tbtitle')[i].parent.parent.select('.statdata')
+                    first_row = data[0].parent
+                    headers = [x.text for x in first_row.findPrevious('tr').find_all('td')]
+                    add_milestone(f'process_row_start_{match_id}_{mode}_{i}')
+                    match_stats_list = process_row(first_row, headers, [], match_id)
+                    add_milestone(f'process_row_finished_{match_id}_{mode}_{i}')
+                    upsert_match_stats(match_id, match_stats_list)
+                    add_milestone(f'persist_finished_{match_id}_{mode}_{i}')
+            add_milestone(f"match_finish_{match_id}")
+
+    milestone_session.commit()
+    milestone_session.close()
 
 
 def process_row(row, headers, match_stats_list, match_id):
@@ -141,6 +169,13 @@ def find_player_id(team_name, player_name):
         if player:
             return player[0].id
         return None
+
+
+def add_milestone(milestone_name):
+    new_milestone = Milestone()
+    new_milestone.milestone = milestone_name
+    new_milestone.milestone_time = datetime.datetime.now()
+    milestone_session.add(new_milestone)
 
 
 def upsert_match_stats(match_id, match_stats_list):
