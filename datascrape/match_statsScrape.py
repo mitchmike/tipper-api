@@ -14,11 +14,11 @@ from datascrape.repositories.match_stats_player import MatchStatsPlayer
 engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
 Session = sessionmaker(bind=engine)
 milestone_session = Session()
+run_id = round(datetime.datetime.now().timestamp() * 1000)
 
 
 def main():
     Base.metadata.create_all(engine, checkfirst=True)
-
     year = 2021
     for round_number in range(60):
         with Session() as games_session:
@@ -29,28 +29,28 @@ def main():
         else:
             print(f'Scraping match stats for year: {year}, round: {round_number}')
         for match_id in matches:
-            add_milestone(f"match_start_{match_id}")
+            add_milestone(match_id, None, f"match_start")
             for mode in ['basic', 'advanced']:  # advanced stats on 2nd link
                 if mode == 'basic':
                     url = f'https://www.footywire.com/afl/footy/ft_match_statistics?mid={match_id}'
                 else:
                     url = f'https://www.footywire.com/afl/footy/ft_match_statistics?mid={match_id}&advv=Y'
                 print(f'scraping from {url}')
-                add_milestone(f'request_start_{match_id}_{mode}')
+                add_milestone(match_id, mode, f'request_start')
                 res = requests.get(url)
-                add_milestone(f'request_finished_{match_id}_{mode}')
+                add_milestone(match_id, mode, f'request_finished')
                 soup = bs4.BeautifulSoup(res.text, 'html.parser')
                 for i in [0, 1]:  # both teams on match stats page
                     print(f'scraping for team: {"home" if i == 0 else "away"}')
                     data = soup.select('.tbtitle')[i].parent.parent.select('.statdata')
                     first_row = data[0].parent
                     headers = [x.text for x in first_row.findPrevious('tr').find_all('td')]
-                    add_milestone(f'process_row_start_{match_id}_{mode}_{i}')
+                    add_milestone(match_id, mode, f'process_row_start_{i}')
                     match_stats_list = process_row(first_row, headers, [], match_id)
-                    add_milestone(f'process_row_finished_{match_id}_{mode}_{i}')
+                    add_milestone(match_id, mode, f'process_row_finished_{i}')
                     upsert_match_stats(match_id, match_stats_list)
-                    add_milestone(f'persist_finished_{match_id}_{mode}_{i}')
-            add_milestone(f"match_finish_{match_id}")
+                    add_milestone(match_id, mode, f'persist_finished_{i}')
+            add_milestone(match_id, None, "match_finish")
 
     milestone_session.commit()
     milestone_session.close()
@@ -171,8 +171,11 @@ def find_player_id(team_name, player_name):
         return None
 
 
-def add_milestone(milestone_name):
+def add_milestone(match_id, mode, milestone_name):
     new_milestone = Milestone()
+    new_milestone.run_id = run_id
+    new_milestone.match_id = match_id
+    new_milestone.mode = mode
     new_milestone.milestone = milestone_name
     new_milestone.milestone_time = datetime.datetime.now()
     milestone_session.add(new_milestone)
@@ -195,13 +198,13 @@ def upsert_match_stats(match_id, match_stats_list):
             else:
                 print(f'New match_stat: match_id:{match_stats.game_id} player:{match_stats.player_name}'
                       f' team:{match_stats.team} will be added to DB')
-            try:
-                session.merge(match_stats)  # merge updates if id exists and adds new if it doesnt
-                session.commit()
-            except Exception as e:
-                print(f'Caught exception {e} \n'
-                      f'Rolling back {match_stats}')
-                session.rollback()
+            session.merge(match_stats)  # merge updates if id exists and adds new if it doesnt
+        try:
+            session.commit()
+        except Exception as e:
+            print(f'Caught exception {e} \n'
+                  f'Rolling back {match_stats_list}')
+            session.rollback()
 
 
 if __name__ == '__main__':
