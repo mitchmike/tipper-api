@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from datascrape import fantasyScrape
 from datascrape.repositories import base
 from datascrape.repositories.player import Player
-from datascrape.repositories.playerFantasy import PlayerFantasy
+from datascrape.repositories.player_fantasy import PlayerFantasy
 
 
 class TestFantasyScrape(unittest.TestCase):

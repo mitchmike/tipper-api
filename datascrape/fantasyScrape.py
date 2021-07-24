@@ -11,8 +11,8 @@ import os
 
 from datascrape.repositories.base import Base
 from datascrape.repositories.player import Player
-from datascrape.repositories.playerFantasy import PlayerFantasy
-from datascrape.repositories.playerSupercoach import PlayerSupercoach
+from datascrape.repositories.player_fantasy import PlayerFantasy
+from datascrape.repositories.player_supercoach import PlayerSupercoach
 
 
 def main():

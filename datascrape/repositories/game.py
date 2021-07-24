@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy.orm import relationship
 from datascrape.repositories.base import Base
 
 
@@ -16,6 +17,7 @@ class Game(Base):
     year = Column(Integer)
     round_number = Column(Integer)
     updated_at = Column(DateTime)
+    match_stats_player = relationship("MatchStatsPlayer", back_populates="game")
 
     def __repr__(self):
         return "<Game(id='%s', home_team='%s', away_team='%s', \
