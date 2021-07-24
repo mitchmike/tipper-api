@@ -115,11 +115,18 @@ def populate_game(game_row, headers, year, round_number):
                 # Game has not happened yet - ignoring as we have no results.
                 return None
         elif key == 'Disposals':
-            #Not interested in this field
+            # Not interested in this field
             None
         elif key == 'Goals':
             # Not interested in this field
             None
+    # add winner after all fields populated
+    if game.home_score > game.away_score:
+        game.winner = game.home_team
+    elif game.home_score < game.away_score:
+        game.winner = game.away_team
+    else:
+        game.winner = 'DRAW'
     return game
 
 

@@ -11,6 +11,7 @@ class Game(Base):
     crowd = Column(Integer)
     home_score = Column(Integer)
     away_score = Column(Integer)
+    winner = Column(String)
     date_time = Column(DateTime)
     year = Column(Integer)
     round_number = Column(Integer)
@@ -18,8 +19,9 @@ class Game(Base):
 
     def __repr__(self):
         return "<Game(id='%s', home_team='%s', away_team='%s', \
-venue='%s', crowd='%s', crowd='%s', home_score='%s', \
-away_score='%s', date='%s', year='%s', round='%s', \
-updated_at='%s')>" % (self.id, self.home_team, self.away_team, self.venue,
-                                     self.crowd, self.crowd, self.home_score, self.away_score, self.date_time, self.year,
-                                     self.round_number, self.updated_at)
+venue='%s', crowd='%s', home_score='%s', \
+away_score='%s', winner='%s', date='%s', year='%s', round='%s', \
+updated_at='%s')>" % (self.id, self.home_team, self.away_team, self.venue, self.crowd,
+                      self.home_score, self.away_score, self.winner,
+                      self.date_time, self.year,
+                      self.round_number, self.updated_at)

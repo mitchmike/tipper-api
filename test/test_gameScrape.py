@@ -1,3 +1,4 @@
+import copy
 import datetime
 import unittest
 import bs4
@@ -13,7 +14,8 @@ from datascrape.repositories.game import Game
 class TestGameScrape(unittest.TestCase):
 
     # for testing the entire html document
-    HTML_SOURCE_FILE = '2019-games.html'
+    YEAR = 2019
+    HTML_SOURCE_FILE = f'{YEAR}-games.html'
     DIR_PATH = os.path.dirname(os.path.realpath(__file__))
     HTML_SOURCE_FILE = os.path.join(DIR_PATH, 'html_files', HTML_SOURCE_FILE)
 
@@ -38,7 +40,30 @@ class TestGameScrape(unittest.TestCase):
                 </td>
                 </tr>
                 '''
-    ONE_GAME_ROW = ['Thu 21 Mar 7:25pm', ['carlton-blues', 'richmond-tigers'], 'MCG', '85016', ['9721', '64', '97'], 'P. Cripps 32', 'T. Lynch 3\nT. Nankervis 3\nJ. Higgins 3']
+
+    HTML_FINALS_ROW = '''<tr><td height="28" align="center" colspan="7" class="tbtitle">
+            Grand Final
+    </td></tr>
+    <tr bgcolor="#f2f4f7" onmouseout="this.bgColor='#f2f4f7';" onmouseover="this.bgColor='#cbcdd0';">
+                <td class="data" height="24"> Thu 21 Mar 7:25pm</td>
+                <td class="data">
+                <a href="th-carlton-blues">Carlton</a>
+                v 
+                <a href="th-richmond-tigers">Richmond</a>
+                </td>
+                <td class="data">MCG</td>
+                <td align="center" class="data">85016</td>
+                <td align="center" class="data"><a href="ft_match_statistics?mid=9721">64-97</a></td>
+                <td class="data">
+                <a href="ft_player_profile?pid=3930" rel="nofollow">P. Cripps</a> 32<br/>
+                </td>
+                <td class="data">
+                <a href="ft_player_profile?pid=3457" rel="nofollow">T. Lynch</a> 3<br/>
+                <a href="ft_player_profile?pid=3952" rel="nofollow">T. Nankervis</a> 3<br/>
+                <a href="ft_player_profile?pid=6465" rel="nofollow">J. Higgins</a> 3<br/>
+                </td>
+                </tr>
+                '''
 
     @classmethod
     def setUpClass(cls):
@@ -59,20 +84,44 @@ class TestGameScrape(unittest.TestCase):
         self.first_row = data[0].parent
         self.headers = [x.text.split('\n')[0].strip() for x in self.first_row.findPrevious('tr').find_all(['td', 'th'])]
         # one row test data:
-        self.game = gameScrape.populate_game(self.ONE_GAME_ROW, self.headers, 2019, 1)
+        self.one_row_soup = bs4.BeautifulSoup(self.HTML_ONE_ROW, 'html.parser')
+        self.ONE_GAME_ROW = ['Thu 21 Mar 7:25pm', ['carlton-blues', 'richmond-tigers'], 'MCG', '85016', ['9721', '64', '97'],
+                        'P. Cripps 32', 'T. Lynch 3\nT. Nankervis 3\nJ. Higgins 3']
+        self.game = gameScrape.populate_game(self.ONE_GAME_ROW, self.headers, self.YEAR, 1)
+        # all rows test data
+        self.games = gameScrape.process_row(self.first_row, self.headers, [], self.YEAR, 1)
 
     def test_process_row(self):
-        None
+        one_game = gameScrape.process_row(self.one_row_soup, self.headers, [], self.YEAR, 1)
+        self.assertIsNotNone(one_game)
+        self.assertEqual(one_game[0].id, 9721)
+        self.assertEqual(one_game[0].home_team, 'carlton-blues')
+        self.assertEqual(one_game[0].away_team, 'richmond-tigers')
+        self.assertEqual(one_game[0].venue, 'MCG')
+        self.assertEqual(one_game[0].crowd, 85016)
+        self.assertEqual(one_game[0].home_score, 64)
+        self.assertEqual(one_game[0].away_score, 97)
+        self.assertEqual(one_game[0].winner, 'richmond-tigers')
+        self.assertEqual(one_game[0].date_time, datetime.datetime(self.YEAR, 3, 21, 19, 25, 0))
+        self.assertEqual(one_game[0].year, self.YEAR)
+        self.assertEqual(one_game[0].round_number, 1)
 
     def test_process_row_multiple(self):
-        None
+        games = gameScrape.process_row(self.first_row, self.headers, [], self.YEAR, 1)
+        self.assertIsNotNone(games)
+        self.assertEqual(len(games), 207)
+        self.assertEqual(games[0].id, 9721)
+        self.assertEqual(games[-1].id, 9927)
 
-    def test_process_row_multiple_finals_round(self):
-        None
+    def test_process_row_finals_round(self):
+        finals_soup = bs4.BeautifulSoup(self.HTML_FINALS_ROW, 'html.parser')  # contains grand-final row header
+        finals_first_row = finals_soup.select('tr')[0]
+        finals_games = gameScrape.process_row(finals_first_row, self.headers, [], self.YEAR, 1)
+        self.assertIsNotNone(finals_games)
+        self.assertEqual(finals_games[0].round_number, 54)  # round for grand-final
 
     def test_scrape_game(self):
-        one_row_soup = bs4.BeautifulSoup(self.HTML_ONE_ROW, 'html.parser')
-        row = one_row_soup.find('tr')
+        row = self.one_row_soup.find('tr')
         game_row = gameScrape.scrape_game(row)
         self.assertEqual(len(game_row), 7)
         self.assertEqual(game_row[0], 'Thu 21 Mar 7:25pm')
@@ -85,8 +134,7 @@ class TestGameScrape(unittest.TestCase):
         self.assertEqual(game_row[4][2], '97')
 
     def test_scrape_game_missing_data(self):
-        one_row_soup = bs4.BeautifulSoup(self.HTML_ONE_ROW, 'html.parser')
-        row = one_row_soup.find('tr')
+        row = self.one_row_soup.find('tr')
         row.find_all('td')[3].string = ''
         game_row = gameScrape.scrape_game(row)
         self.assertEqual(len(game_row), 7)
@@ -100,8 +148,7 @@ class TestGameScrape(unittest.TestCase):
         self.assertEqual(game_row[4][2], '97')
 
     def test_scrape_game_populate_game_bad_links(self):
-        one_row_soup = bs4.BeautifulSoup(self.HTML_ONE_ROW, 'html.parser')
-        row = one_row_soup.find('tr')
+        row = self.one_row_soup.find('tr')
         td_to_change = row.find_all('td')[1]
         td_to_change.find_all('a')[1].decompose() # remove one a tag from this td
         game_row = gameScrape.scrape_game(row)
@@ -113,12 +160,12 @@ class TestGameScrape(unittest.TestCase):
         self.assertEqual(game_row[4][0], '9721')
         self.assertEqual(game_row[4][1], '64')
         self.assertEqual(game_row[4][2], '97')
-        game = gameScrape.populate_game(game_row, self.headers, 2019, 1)
+        game = gameScrape.populate_game(game_row, self.headers, self.YEAR, 1)
         self.assertIsNone(game.home_team)
         self.assertIsNone(game.away_team)
 
     def test_populate_game(self):
-        game = gameScrape.populate_game(self.ONE_GAME_ROW, self.headers, 2019, 1)
+        game = gameScrape.populate_game(self.ONE_GAME_ROW, self.headers, self.YEAR, 1)
         self.assertEqual(game.id, 9721)
         self.assertEqual(game.home_team, 'carlton-blues')
         self.assertEqual(game.away_team, 'richmond-tigers')
@@ -126,18 +173,30 @@ class TestGameScrape(unittest.TestCase):
         self.assertEqual(game.crowd, 85016)
         self.assertEqual(game.home_score, 64)
         self.assertEqual(game.away_score, 97)
-        self.assertEqual(game.date_time, datetime.datetime(2019, 3, 21, 19, 25, 0))
-        self.assertEqual(game.year, 2019)
+        self.assertEqual(game.winner, 'richmond-tigers')
+        self.assertEqual(game.date_time, datetime.datetime(self.YEAR, 3, 21, 19, 25, 0))
+        self.assertEqual(game.year, self.YEAR)
         self.assertEqual(game.round_number, 1)
+
+    def test_populate_game_draw(self):
+        # set scores as equal
+        self.ONE_GAME_ROW[4][1] = '70'
+        self.ONE_GAME_ROW[4][2] = '70'
+        game = gameScrape.populate_game(self.ONE_GAME_ROW, self.headers, self.YEAR, 1)
+        self.assertEqual(game.home_team, 'carlton-blues')
+        self.assertEqual(game.away_team, 'richmond-tigers')
+        self.assertEqual(game.home_score, 70)
+        self.assertEqual(game.away_score, 70)
+        self.assertEqual(game.winner, 'DRAW')
 
     def test_populate_game_BYE(self):
         game_row = ['', 'Western Bulldogs', 'BYE', '', '', '', '']
-        game = gameScrape.populate_game(game_row, self.headers, 2019, 1)
+        game = gameScrape.populate_game(game_row, self.headers, self.YEAR, 1)
         self.assertIsNone(game)
 
     def test_populate_game_no_result(self):
         game_row = ['Sun 18 Jul 12:35pm', ['kangaroos', 'essendon-bombers'], 'Metricon Stadium', '', '', '', '']
-        game = gameScrape.populate_game(game_row, self.headers, 2019, 1)
+        game = gameScrape.populate_game(game_row, self.headers, self.YEAR, 1)
         self.assertIsNone(game)
 
     def test_upsert_game_new(self):
@@ -152,21 +211,61 @@ class TestGameScrape(unittest.TestCase):
             self.assertEqual(game_in_db[0].crowd, 85016)
             self.assertEqual(game_in_db[0].home_score, 64)
             self.assertEqual(game_in_db[0].away_score, 97)
-            self.assertEqual(game_in_db[0].date_time, datetime.datetime(2019, 3, 21, 19, 25, 0))
-            self.assertEqual(game_in_db[0].year, 2019)
+            self.assertEqual(game_in_db[0].winner, 'richmond-tigers')
+            self.assertEqual(game_in_db[0].date_time, datetime.datetime(self.YEAR, 3, 21, 19, 25, 0))
+            self.assertEqual(game_in_db[0].year, self.YEAR)
             self.assertEqual(game_in_db[0].round_number, 1)
 
     def test_upsert_game_already_exists(self):
-        None
+        with TestGameScrape.Session() as test_session:
+            game_copy = copy.deepcopy(self.game)
+            game_copy.crowd = 99999  # to be overridden when game is added again
+            game_copy.venue = 'the moon'  # to be overridden when game is added again
+            test_session.add(game_copy)
+            test_session.commit()
+        gameScrape.upsert_games([self.game], TestGameScrape._engine)
+        with TestGameScrape.Session() as session:
+            game_in_db = session.execute(select(Game).filter_by(id=self.game.id)).first()
+            self.assertIsNotNone(game_in_db[0])
+            self.assertEqual(game_in_db[0].id, 9721)
+            self.assertEqual(game_in_db[0].home_team, 'carlton-blues')
+            self.assertEqual(game_in_db[0].away_team, 'richmond-tigers')
+            self.assertEqual(game_in_db[0].venue, 'MCG')  # latest update should overwrite existing game details
+            self.assertEqual(game_in_db[0].crowd, 85016)
+            self.assertEqual(game_in_db[0].home_score, 64)
+            self.assertEqual(game_in_db[0].away_score, 97)
+            self.assertEqual(game_in_db[0].winner, 'richmond-tigers')
+            self.assertEqual(game_in_db[0].date_time, datetime.datetime(self.YEAR, 3, 21, 19, 25, 0))
+            self.assertEqual(game_in_db[0].year, self.YEAR)
+            self.assertEqual(game_in_db[0].round_number, 1)
 
     def test_upsert_game_no_id(self):
-        None
+        self.game.id = None
+        gameScrape.upsert_games([self.game], TestGameScrape._engine)
+        with TestGameScrape.Session() as session:
+            game_in_db = session.execute(select(Game).filter_by(id=self.game.id)).first()
+            self.assertIsNone(game_in_db)
 
     def test_upsert_game_no_home_away_team(self):
-        None
+        # home team
+        self.game.home_team = None
+        gameScrape.upsert_games([self.game], TestGameScrape._engine)
+        with TestGameScrape.Session() as session:
+            game_in_db = session.execute(select(Game).filter_by(id=self.game.id)).first()
+            self.assertIsNone(game_in_db)
+        # away team
+        self.game.home_team = 'carlton-blues'
+        self.game.away_team = None
+        gameScrape.upsert_games([self.game], TestGameScrape._engine)
+        with TestGameScrape.Session() as session:
+            game_in_db = session.execute(select(Game).filter_by(id=self.game.id)).first()
+            self.assertIsNone(game_in_db)
 
     def test_upsert_games_full_year(self):
-        None
+        gameScrape.upsert_games(self.games, TestGameScrape._engine)
+        with TestGameScrape.Session() as session:
+            games_in_db = session.execute(select(Game).filter_by(year=self.YEAR)).all()
+            self.assertEqual(len(games_in_db), 207)
 
     def tearDown(self):
         with TestGameScrape.Session() as cleanup_session:
