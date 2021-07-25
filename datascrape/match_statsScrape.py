@@ -1,9 +1,13 @@
+import threading
+
 import requests
 import bs4
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from sqlalchemy import select
 import datetime
+import queue
+from threading import Thread
 
 from datascrape.repositories.base import Base
 from datascrape.repositories.player import Player
@@ -15,45 +19,80 @@ engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gss
 Session = sessionmaker(bind=engine)
 milestone_session = Session()
 run_id = round(datetime.datetime.now().timestamp() * 1000)
+request_q = queue.Queue()
+response_q = queue.Queue()
 
 
-def main():
-    Base.metadata.create_all(engine, checkfirst=True)
+def create_request_queue():
     year = 2021
     for round_number in range(60):
         with Session() as games_session:
             # get match ids for year / round
             matches = games_session.execute(select(Game.id).filter_by(year=year, round_number=round_number)).scalars().all()
-        if len(matches) == 0:
-            continue
-        else:
-            print(f'Scraping match stats for year: {year}, round: {round_number}')
-        for match_id in matches:
-            add_milestone(match_id, None, f"match_start")
-            for mode in ['basic', 'advanced']:  # advanced stats on 2nd link
-                if mode == 'basic':
-                    url = f'https://www.footywire.com/afl/footy/ft_match_statistics?mid={match_id}'
-                else:
-                    url = f'https://www.footywire.com/afl/footy/ft_match_statistics?mid={match_id}&advv=Y'
-                print(f'scraping from {url}')
-                add_milestone(match_id, mode, f'request_start')
-                res = requests.get(url)
-                add_milestone(match_id, mode, f'request_finished')
-                soup = bs4.BeautifulSoup(res.text, 'html.parser')
-                for i in [0, 1]:  # both teams on match stats page
-                    print(f'scraping for team: {"home" if i == 0 else "away"}')
-                    data = soup.select('.tbtitle')[i].parent.parent.select('.statdata')
-                    first_row = data[0].parent
-                    headers = [x.text for x in first_row.findPrevious('tr').find_all('td')]
-                    add_milestone(match_id, mode, f'process_row_start_{i}')
-                    match_stats_list = process_row(first_row, headers, [], match_id)
-                    add_milestone(match_id, mode, f'process_row_finished_{i}')
-                    upsert_match_stats(match_id, match_stats_list)
-                    add_milestone(match_id, mode, f'persist_finished_{i}')
-            add_milestone(match_id, None, "match_finish")
+            for match_id in matches:
+                for mode in ['basic', 'advanced']:  # advanced stats on 2nd link
+                    request_q.put({'year': year, 'round_number': round_number,
+                                   'match_id': match_id, 'mode': mode,
+                                   'url': None, 'response': None})
 
+
+def send_request():  # need to run on threads
+    while not len(request_q.queue) == 0:  # request q is complete
+        req = request_q.get()
+        if req['mode'] == 'basic':
+            req_url = f"https://www.footywire.com/afl/footy/ft_match_statistics?mid={req['match_id']}"
+        else:
+            req_url = f"https://www.footywire.com/afl/footy/ft_match_statistics?mid={req['match_id']}&advv=Y"
+        req['url'] = req_url
+        print(f'Thread {threading.get_ident()}: sending req: {req_url}')
+        add_milestone(req['match_id'], req['mode'], f"request_start")
+        req['res'] = requests.get(req_url)
+        print(f'Thread {threading.get_ident()}: got response for {req_url}')
+        add_milestone(req['match_id'], req['mode'], f"request_finish")
+        response_q.put(req)
+        request_q.task_done()
+
+
+def main():
+    Base.metadata.create_all(engine, checkfirst=True)
+    create_request_queue()  # synchronously create list of urls
+    threads = 10
+    for i in range(threads):
+        t = Thread(target=send_request)  # async create threads for sending requests
+        t.daemon = True
+        t.start()
+    # pick up responses and synchronously process them
+    while True:
+        response = response_q.get()
+        process_response(response)
+        response_q.task_done()
+        if len(request_q.queue) == 0 and len(response_q.queue) == 0:
+            break
     milestone_session.commit()
     milestone_session.close()
+
+
+def process_response(res_obj):
+    year = res_obj['year']
+    round_number = res_obj['round_number']
+    match_id = res_obj['match_id']
+    mode = res_obj['mode']
+    url = res_obj['url']
+    res = res_obj['res']
+    add_milestone(match_id, mode, f"match_start")
+    print(f'Scraping match stats for year: {year}, round: {round_number}, match: {match_id}, url: {url}')
+    soup = bs4.BeautifulSoup(res.text, 'html.parser')
+    for i in [0, 1]:  # both teams on match stats page
+        print(f'scraping for team: {"home" if i == 0 else "away"}')
+        data = soup.select('.tbtitle')[i].parent.parent.select('.statdata')
+        first_row = data[0].parent
+        headers = [x.text for x in first_row.findPrevious('tr').find_all('td')]
+        add_milestone(match_id, mode, f'process_row_start_{i}')
+        match_stats_list = process_row(first_row, headers, [], match_id)
+        add_milestone(match_id, mode, f'process_row_finish_{i}')
+        upsert_match_stats(match_id, match_stats_list)
+        add_milestone(match_id, mode, f'persist_finish_{i}')
+    add_milestone(match_id, mode, "match_finish")
 
 
 def process_row(row, headers, match_stats_list, match_id):
@@ -195,9 +234,9 @@ def upsert_match_stats(match_id, match_stats_list):
             if len(db_matches) > 0:
                 # just add the id to our obj, then merge, then commit session
                 match_stats.id = db_matches[0].id
-            else:
-                print(f'New match_stat: match_id:{match_stats.game_id} player:{match_stats.player_name}'
-                      f' team:{match_stats.team} will be added to DB')
+            # else:
+                # print(f'New match_stat: match_id:{match_stats.game_id} player:{match_stats.player_name}'
+                #       f' team:{match_stats.team} will be added to DB')
             session.merge(match_stats)  # merge updates if id exists and adds new if it doesnt
         try:
             session.commit()

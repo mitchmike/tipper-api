@@ -1,3 +1,4 @@
+-- milestones pivot table
 select * from crosstab(
 $$select concat(run_id,'_',match_id,'_',mode) as match_mode,
 	milestone,
