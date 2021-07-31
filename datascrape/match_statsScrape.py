@@ -23,9 +23,28 @@ request_q = queue.Queue()
 response_q = queue.Queue()
 
 
+def main():
+    Base.metadata.create_all(engine, checkfirst=True)
+    create_request_queue()  # synchronously create list of urls
+    threads = 10
+    for i in range(threads):
+        t = Thread(target=send_request)  # async create threads for sending requests
+        t.daemon = True
+        t.start()
+    # pick up responses and synchronously process them
+    while True:
+        response = response_q.get()
+        process_response(response)
+        response_q.task_done()
+        if len(request_q.queue) == 0 and len(response_q.queue) == 0:
+            break
+    milestone_session.commit()
+    milestone_session.close()
+
+
 def create_request_queue():
     year = 2021
-    for round_number in range(60):
+    for round_number in range(2):
         with Session() as games_session:
             # get match ids for year / round
             matches = games_session.execute(select(Game.id).filter_by(year=year, round_number=round_number)).scalars().all()
@@ -51,25 +70,6 @@ def send_request():  # need to run on threads
         add_milestone(req['match_id'], req['mode'], f"request_finish")
         response_q.put(req)
         request_q.task_done()
-
-
-def main():
-    Base.metadata.create_all(engine, checkfirst=True)
-    create_request_queue()  # synchronously create list of urls
-    threads = 10
-    for i in range(threads):
-        t = Thread(target=send_request)  # async create threads for sending requests
-        t.daemon = True
-        t.start()
-    # pick up responses and synchronously process them
-    while True:
-        response = response_q.get()
-        process_response(response)
-        response_q.task_done()
-        if len(request_q.queue) == 0 and len(response_q.queue) == 0:
-            break
-    milestone_session.commit()
-    milestone_session.close()
 
 
 def process_response(res_obj):

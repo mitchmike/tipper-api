@@ -1,10 +1,10 @@
-from sqlalchemy import Column, Integer, String, DateTime, BigInteger
+from sqlalchemy import Column, Integer, String, DateTime, BigInteger, Sequence
 from datascrape.repositories.base import Base
 
 
 class Milestone(Base):
     __tablename__ = 'milestones'
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, Sequence('milestone_id_seq'), primary_key=True)
     run_id = Column(BigInteger)
     match_id = Column(Integer)
     mode = Column(String)
