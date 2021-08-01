@@ -17,6 +17,7 @@ FINAL_ROUNDS = {
     'grand final': 54
 }
 
+
 def main():
     engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
     Base.metadata.create_all(engine, checkfirst=True)
@@ -38,7 +39,7 @@ def main():
 
 
 def process_row(row, headers, games, year, round_number):
-    if len(row.select('.data')): #data row
+    if len(row.select('.data')):  # data row
         try:
             game_row = scrape_game(row)
             game = populate_game(game_row, headers, year, round_number)
@@ -47,7 +48,7 @@ def process_row(row, headers, games, year, round_number):
             game = None
         if game:
             games.append(game)
-    elif len(row.select('.tbtitle')): #round header
+    elif len(row.select('.tbtitle')):  # round header
         round_string = row.select('.tbtitle')[0].text.strip()
         if 'final' in round_string.lower():
             round_number = FINAL_ROUNDS[round_string.lower()]

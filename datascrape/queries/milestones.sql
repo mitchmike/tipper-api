@@ -1,13 +1,14 @@
 -- milestones pivot table
 select
 pivtab.match_mode,
-pivtab.request_finish - pivtab.request_start as "req",
-pivtab.match_finish - pivtab.match_start as "scrape_full",
-pivtab.process_row_finish_0 - pivtab.process_row_start_0 as "scrape_process_row_0",
-pivtab.process_row_finish_1 - pivtab.process_row_start_1 as "scrape_process_row_1",
-pivtab.persist_finish_0 - pivtab.process_row_finish_0 as "scrape_persist_0",
-pivtab.persist_finish_1 - pivtab.process_row_finish_1 as "scrape_persist_1",
-pivtab.match_start - pivtab.request_finish as "time_in_queue"
+extract(MILLISECONDS from pivtab.request_finish - pivtab.request_start) as "req",
+extract(MILLISECONDS from pivtab.match_finish - pivtab.match_start) as "scrape_full",
+extract(MILLISECONDS from pivtab.process_row_start_0 - pivtab.match_start) as "data_prep",
+extract(MILLISECONDS from pivtab.process_row_finish_0 - pivtab.process_row_start_0) as "scrape_process_row_0",
+extract(MILLISECONDS from pivtab.process_row_finish_1 - pivtab.process_row_start_1) as "scrape_process_row_1",
+extract(MILLISECONDS from pivtab.persist_finish_0 - pivtab.process_row_finish_0) as "scrape_persist_0",
+extract(MILLISECONDS from pivtab.persist_finish_1 - pivtab.process_row_finish_1) as "scrape_persist_1",
+extract(MILLISECONDS from pivtab.match_start - pivtab.request_finish) as "time_in_queue"
 from (select * from crosstab(
 $$select concat(run_id,'_',match_id,'_',mode) as match_mode,
 	milestone,

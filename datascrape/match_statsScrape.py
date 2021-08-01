@@ -24,6 +24,7 @@ response_q = queue.Queue()
 
 
 def main():
+    start = datetime.datetime.now()
     Base.metadata.create_all(engine, checkfirst=True)
     create_request_queue()  # synchronously create list of urls
     threads = 10
@@ -40,11 +41,12 @@ def main():
             break
     milestone_session.commit()
     milestone_session.close()
+    print(f"Total time taken: {datetime.datetime.now() - start}")
 
 
 def create_request_queue():
     year = 2021
-    for round_number in range(2):
+    for round_number in range(60):
         with Session() as games_session:
             # get match ids for year / round
             matches = games_session.execute(select(Game.id).filter_by(year=year, round_number=round_number)).scalars().all()
@@ -81,7 +83,7 @@ def process_response(res_obj):
     res = res_obj['res']
     add_milestone(match_id, mode, f"match_start")
     print(f'Scraping match stats for year: {year}, round: {round_number}, match: {match_id}, url: {url}')
-    soup = bs4.BeautifulSoup(res.text, 'html.parser')
+    soup = bs4.BeautifulSoup(res.text, 'lxml')
     for i in [0, 1]:  # both teams on match stats page
         print(f'scraping for team: {"home" if i == 0 else "away"}')
         data = soup.select('.tbtitle')[i].parent.parent.select('.statdata')
