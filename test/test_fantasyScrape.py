@@ -6,7 +6,7 @@ import copy
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from datascrape import fantasyScrape
+from datascrape.scrapers import fantasyScrape
 from datascrape.repositories import base
 from datascrape.repositories.player import Player
 from datascrape.repositories.player_fantasy import PlayerFantasy

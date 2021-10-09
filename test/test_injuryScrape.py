@@ -5,11 +5,11 @@ import bs4
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from datascrape import injuryScrape
+from datascrape.scrapers import injuryScrape
 from datascrape.repositories import base
 from datascrape.repositories.player import Player
 from datascrape.repositories.injury import Injury
-from datascrape.injuryScrape import TEAMS
+from datascrape.scrapers.injuryScrape import TEAMS
 
 
 class TestInjuryScrape(unittest.TestCase):

@@ -6,7 +6,7 @@ import copy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select
-from datascrape import playerScrape
+from datascrape.scrapers import playerScrape
 from datascrape.repositories import base
 from datascrape.repositories.player import Player
 

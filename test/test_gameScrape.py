@@ -6,7 +6,7 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select
-from datascrape import gameScrape
+from datascrape.scrapers import gameScrape
 from datascrape.repositories import base
 from datascrape.repositories.game import Game
 
