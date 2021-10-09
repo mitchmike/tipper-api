@@ -3,23 +3,36 @@ import sys
 import os
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 HTML_OUTPUT_PATH = os.path.join(DIR_PATH, 'html_files')
+PLAYER_FILE_NAME = 'richmond-player-scrape.html'
+INJURY_FILE_NAME = 'injuries.html'
+FANTASY_FILE_NAME = '2021-r1-fantasy-points.html'
+SUPERCOACH_FILE_NAME = '2021-r1-supercoach-points.html'
+GAMES_FILE_NAME = '2019-games.html'
+MATCH_STATS_FILE_NAME = '2021-r1-rich-carl-match-stats.html'
+MATCH_STATS_ADV_FILE_NAME = '2021-r1-rich-carl-match-stats-adv.html'
 
 REQUEST_MAPS = [
-    {'file': 'players',
-     'file_name': 'richmond-player-scrape.html',
-     'link': 'https://www.footywire.com/afl/footy/tp-richmond-tigers'},
-    {'file': 'injuries',
-     'file_name': 'injuries.html',
-     'link': 'https://www.footywire.com/afl/footy/injury_list'},
-    {'file': 'fantasy',
-     'file_name': '2021-r1-fantasy-points.html',
-     'link': 'https://www.footywire.com/afl/footy/dream_team_round?year=2021&round=1&p=&s=T'},
-    {'file': 'supercoach',
-     'file_name': '2021-r1-supercoach-points.html',
-     'link': 'https://www.footywire.com/afl/footy/supercoach_round?year=2021&round=1&p=&s=T'},
-    {'file': 'games',
-     'file_name': '2019-games.html',
-     'link': 'https://www.footywire.com/afl/footy/ft_match_list?year=2019'}
+    # {'file': 'players',
+    #  'file_name': PLAYER_FILE_NAME,
+    #  'link': 'https://www.footywire.com/afl/footy/tp-richmond-tigers'},
+    # {'file': 'injuries',
+    #  'file_name': INJURY_FILE_NAME,
+    #  'link': 'https://www.footywire.com/afl/footy/injury_list'},
+    # {'file': 'fantasy',
+    #  'file_name': FANTASY_FILE_NAME,
+    #  'link': 'https://www.footywire.com/afl/footy/dream_team_round?year=2021&round=1&p=&s=T'},
+    # {'file': 'supercoach',
+    #  'file_name': SUPERCOACH_FILE_NAME,
+    #  'link': 'https://www.footywire.com/afl/footy/supercoach_round?year=2021&round=1&p=&s=T'},
+    # {'file': 'games',
+    #  'file_name': GAMES_FILE_NAME,
+    #  'link': 'https://www.footywire.com/afl/footy/ft_match_list?year=2019'},
+    # {'file': 'matchStats',
+    #  'file_name': MATCH_STATS_FILE_NAME,
+    #  'link': 'https://www.footywire.com/afl/footy/ft_match_statistics?mid=10327'},
+    # {'file': 'matchStatsAdv',
+    #  'file_name': MATCH_STATS_ADV_FILE_NAME,
+    #  'link': 'https://www.footywire.com/afl/footy/ft_match_statistics?mid=10327$advv=Y'}
 ]
 AVAILABLE_FILES = [x['file'] for x in REQUEST_MAPS]
 

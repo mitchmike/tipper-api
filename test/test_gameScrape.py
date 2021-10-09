@@ -1,23 +1,21 @@
 import copy
 import datetime
-import unittest
 import bs4
 import os
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+
 from sqlalchemy import select
 from datascrape.scrapers import gameScrape
 from datascrape.repositories import base
 from datascrape.repositories.game import Game
+from test import get_html
+from test.BaseScraperTest import BaseScraperTest
 
 
-class TestGameScrape(unittest.TestCase):
-
+class TestGameScrape(BaseScraperTest):
     # for testing the entire html document
-    YEAR = 2019
-    HTML_SOURCE_FILE = f'{YEAR}-games.html'
     DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-    HTML_SOURCE_FILE = os.path.join(DIR_PATH, 'html_files', HTML_SOURCE_FILE)
+    HTML_SOURCE_FILE = os.path.join(DIR_PATH, 'html_files', get_html.GAMES_FILE_NAME)
+    YEAR = 2019
 
     # for testing an individual row
     HTML_ONE_ROW = '''<tr bgcolor="#f2f4f7" onmouseout="this.bgColor='#f2f4f7';" onmouseover="this.bgColor='#cbcdd0';">
@@ -64,14 +62,6 @@ class TestGameScrape(unittest.TestCase):
                 </td>
                 </tr>
                 '''
-
-    @classmethod
-    def setUpClass(cls):
-        TestGameScrape._engine = create_engine(
-            'postgresql://postgres:oscar12!@localhost:5432/tiplos-test?gssencmode=disable'
-        )
-        base.Base.metadata.create_all(TestGameScrape._engine, checkfirst=True)
-        TestGameScrape.Session = sessionmaker(bind=TestGameScrape._engine)
 
     def setUp(self):
         with TestGameScrape.Session() as cleanup_session:
@@ -275,7 +265,3 @@ class TestGameScrape(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         base.Base.metadata.drop_all(TestGameScrape._engine, checkfirst=False)
-
-
-if __name__ == '__main__':
-    unittest.main()

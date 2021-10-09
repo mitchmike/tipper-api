@@ -1,22 +1,23 @@
 import datetime
 import unittest
+
 import bs4
 import os
 import copy
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+
 from sqlalchemy import select
 from datascrape.scrapers import playerScrape
 from datascrape.repositories import base
 from datascrape.repositories.player import Player
+from test import get_html
+from test.BaseScraperTest import BaseScraperTest
 
 
-class TestPlayerScrape(unittest.TestCase):
+class TestPlayerScrape(BaseScraperTest):
 
     # for testing the entire html document
-    HTML_SOURCE_FILE = 'richmond-player-scrape.html'
     DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-    HTML_SOURCE_FILE = os.path.join(DIR_PATH, 'html_files', HTML_SOURCE_FILE)
+    HTML_SOURCE_FILE = os.path.join(DIR_PATH, 'html_files', get_html.PLAYER_FILE_NAME)
     TEAM = 'richmond-tigers'
 
     # for testing an individual row
@@ -32,14 +33,6 @@ class TestPlayerScrape(unittest.TestCase):
                 <td class="data">
                 Forward
                 </td></tr>'''
-
-    @classmethod
-    def setUpClass(cls):
-        TestPlayerScrape._engine = create_engine(
-            'postgresql://postgres:oscar12!@localhost:5432/tiplos-test?gssencmode=disable'
-        )
-        base.Base.metadata.create_all(TestPlayerScrape._engine, checkfirst=True)
-        TestPlayerScrape.Session = sessionmaker(bind=TestPlayerScrape._engine)
 
     def setUp(self):
         with TestPlayerScrape.Session() as cleanup_session:
@@ -185,7 +178,7 @@ class TestPlayerScrape(unittest.TestCase):
         with TestPlayerScrape.Session() as session:
             players_in_db = session.execute(select(Player).filter_by(team=self.TEAM)).all()
             # WHEN one row fails THEN other rows should not be affected
-            self.assertEqual(41, len(players_in_db))
+            self.assertEqual(42, len(players_in_db))
 
     def test_upsert_team_no_DOB(self):
         invalid_player = self.player
@@ -209,7 +202,7 @@ class TestPlayerScrape(unittest.TestCase):
         playerScrape.upsert_team(self.TEAM, players, TestPlayerScrape._engine)
         with TestPlayerScrape.Session() as test_session:
             players_in_db = test_session.execute(select(Player).filter_by(team=self.TEAM)).all()
-            self.assertEqual(len(players_in_db), 42)
+            self.assertEqual(len(players_in_db), 43)
             player_start = players_in_db[0][0]
             self.assertEqual(player_start.id, 1)
             self.assertEqual(player_start.name_key, 'jake-aarts')

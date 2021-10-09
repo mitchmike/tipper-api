@@ -1,22 +1,21 @@
 import copy
 import datetime
-import unittest
 import bs4
 import os
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+
 from datascrape.scrapers import injuryScrape
 from datascrape.repositories import base
 from datascrape.repositories.player import Player
 from datascrape.repositories.injury import Injury
 from datascrape.scrapers.injuryScrape import TEAMS
+from test import get_html
+from test.BaseScraperTest import BaseScraperTest
 
 
-class TestInjuryScrape(unittest.TestCase):
+class TestInjuryScrape(BaseScraperTest):
     # for testing the entire html document
-    HTML_SOURCE_FILE = 'injuries.html'
     DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-    HTML_SOURCE_FILE = os.path.join(DIR_PATH, 'html_files', HTML_SOURCE_FILE)
+    HTML_SOURCE_FILE = os.path.join(DIR_PATH, 'html_files', get_html.INJURY_FILE_NAME)
     TEAM = 'adelaide-crows'
 
     # for testing an individual row
@@ -30,14 +29,6 @@ class TestInjuryScrape(unittest.TestCase):
                 <td align="center">Foot</td>
                 <td align="center">TBC</td>
                 </tr>'''
-
-    @classmethod
-    def setUpClass(cls):
-        TestInjuryScrape._engine = create_engine(
-            'postgresql://postgres:oscar12!@localhost:5432/tiplos-test?gssencmode=disable'
-        )
-        base.Base.metadata.create_all(TestInjuryScrape._engine, checkfirst=True)
-        TestInjuryScrape.Session = sessionmaker(bind=TestInjuryScrape._engine)
 
     def setUp(self):
         with TestInjuryScrape.Session() as cleanup_session:
@@ -75,11 +66,11 @@ class TestInjuryScrape(unittest.TestCase):
 
     def test_scrape_row_multiple(self):
         data_rows = injuryScrape.scrape_rows(self.team_table)
-        self.assertEqual(len(data_rows), 8)
+        self.assertEqual(len(data_rows), 6)
         injury_row = data_rows[0]
-        self.assertEqual(injury_row[0], 'daniel-talia')
-        self.assertEqual(injury_row[1], 'Foot')
-        self.assertEqual(injury_row[2], 'TBC')
+        self.assertEqual(injury_row[0], 'aaron-nietschke')
+        self.assertEqual(injury_row[1], 'Knee')
+        self.assertEqual(injury_row[2], 'Season')
 
     def test_populate_injury_player_doesnt_exist(self):
         with TestInjuryScrape.Session() as cleanup_session:
@@ -111,8 +102,8 @@ class TestInjuryScrape(unittest.TestCase):
             self.assertEqual(len(injuries_in_db), 1)
             db_injury = injuries_in_db[0]
             self.assertEqual(db_injury.player_id, 5)
-            self.assertEqual(db_injury.injury, 'Foot')
-            self.assertEqual(db_injury.returning, 'TBC')
+            self.assertEqual(db_injury.injury, 'Knee')
+            self.assertEqual(db_injury.returning, 'Season')
             self.assertEqual(db_injury.recovered, False)
 
     def test_upsert_injury_already_exists(self):
@@ -131,8 +122,8 @@ class TestInjuryScrape(unittest.TestCase):
             self.assertEqual(len(injuries_in_db), 1)
             db_injury = injuries_in_db[0]
             self.assertEqual(db_injury.player_id, 5)
-            self.assertEqual(db_injury.injury, 'Foot')
-            self.assertEqual(db_injury.returning, 'TBC')
+            self.assertEqual(db_injury.injury, 'Knee')
+            self.assertEqual(db_injury.returning, 'Season')
             self.assertEqual(db_injury.recovered, False)
 
     def test_upsert_injury_recovered_if_player_not_in_latest_scrape(self):
@@ -176,7 +167,3 @@ def add_player_to_db(player_id, name, team):
     with TestInjuryScrape.Session() as player_session:
         player_session.add(player)
         player_session.commit()
-
-
-if __name__ == '__main__':
-    unittest.main()

@@ -1,22 +1,20 @@
 import datetime
-import unittest
 import bs4
 import os
 import copy
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from datascrape.scrapers import fantasyScrape
 from datascrape.repositories import base
 from datascrape.repositories.player import Player
 from datascrape.repositories.player_fantasy import PlayerFantasy
+from test import get_html
+from test.BaseScraperTest import BaseScraperTest
 
 
-class TestFantasyScrape(unittest.TestCase):
+class TestFantasyScrape(BaseScraperTest):
     # for testing the entire html document
-    HTML_SOURCE_FILE = '2021-r1-fantasy-points.html'
     DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-    HTML_SOURCE_FILE = os.path.join(DIR_PATH, 'html_files', HTML_SOURCE_FILE)
+    HTML_SOURCE_FILE = os.path.join(DIR_PATH, 'html_files', get_html.FANTASY_FILE_NAME)
 
     # for testing an individual row
     HTML_ONE_ROW = '''<table width="688" border="0" cellspacing="0" cellpadding="0">
@@ -41,14 +39,6 @@ class TestFantasyScrape(unittest.TestCase):
                 <td align="center">19.1</td>
                 </tr>
                 </table>'''
-
-    @classmethod
-    def setUpClass(cls):
-        TestFantasyScrape._engine = create_engine(
-            'postgresql://postgres:oscar12!@localhost:5432/tiplos-test?gssencmode=disable'
-        )
-        base.Base.metadata.create_all(TestFantasyScrape._engine, checkfirst=True)
-        TestFantasyScrape.Session = sessionmaker(bind=TestFantasyScrape._engine)
 
     def setUp(self):
         with TestFantasyScrape.Session() as cleanup_session:
@@ -98,7 +88,7 @@ class TestFantasyScrape(unittest.TestCase):
         self.assertEqual(data_row[0], '1')
         self.assertEqual(data_row[1], 'andrew-mcgrath')
         self.assertEqual(data_row[2], 'essendon-bombers')
-        self.assertEqual(data_row[3], '$607,000')
+        self.assertEqual(data_row[3], '$515,000')
         self.assertEqual(data_row[4], '$738,000')
         self.assertEqual(data_row[5], '141')
         self.assertEqual(data_row[6], '19.1')
@@ -106,7 +96,7 @@ class TestFantasyScrape(unittest.TestCase):
         self.assertEqual(data_row_last[0], '404')
         self.assertEqual(data_row_last[1], 'alex-pearce')
         self.assertEqual(data_row_last[2], 'fremantle-dockers')
-        self.assertEqual(data_row_last[3], '$217,000')
+        self.assertEqual(data_row_last[3], '$259,000')
         self.assertEqual(data_row_last[4], '$232,000')
         self.assertEqual(data_row_last[5], '7')
         self.assertEqual(data_row_last[6], '3.0')
@@ -237,6 +227,3 @@ def add_player_to_db(player_id, name, team):
         player_session.add(player)
         player_session.commit()
 
-
-if __name__ == '__main__':
-    unittest.main()
