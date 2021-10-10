@@ -68,7 +68,7 @@ def send_request(request_q, response_q, milestone_recorder):
         req['url'] = req_url
         print(f'Thread {threading.get_ident()}: sending req: {req_url}')
         add_milestone(req['match_id'], req['mode'], f"request_start", milestone_recorder)
-        req['res'] = requests.get(req_url)
+        req['response'] = requests.get(req_url).text
         print(f'Thread {threading.get_ident()}: got response for {req_url}')
         add_milestone(req['match_id'], req['mode'], f"request_finish", milestone_recorder)
         response_q.put(req)
@@ -81,10 +81,10 @@ def process_response(res_obj, milestone_recorder, engine):
     match_id = res_obj['match_id']
     mode = res_obj['mode']
     url = res_obj['url']
-    res = res_obj['res']
+    res = res_obj['response']
     add_milestone(match_id, mode, f"match_start", milestone_recorder)
     print(f'Scraping match stats for year: {year}, round: {round_number}, match: {match_id}, url: {url}')
-    soup = bs4.BeautifulSoup(res.text, 'lxml')
+    soup = bs4.BeautifulSoup(res, 'lxml')
     for i in [0, 1]:  # both teams on match stats page
         print(f'Scraping for team: {"home" if i == 0 else "away"}')
         data = soup.select('.tbtitle')[i].parent.parent.select('.statdata')
@@ -108,7 +108,7 @@ def process_row(row, headers, match_stats_list, match_id, engine):
     if match_stats_player:
         match_stats_list.append(match_stats_player)
     next_row = row.findNext('tr')
-    if len(next_row.select('.statdata')):
+    if next_row is not None and len(next_row.select('.statdata')):
         process_row(next_row, headers, match_stats_list, match_id, engine)
     return match_stats_list
 

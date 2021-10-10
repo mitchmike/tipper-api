@@ -24,6 +24,11 @@ class Player(Base):
     match_stats_player = relationship("MatchStatsPlayer", back_populates="player")
     __table_args__ = (UniqueConstraint('name_key', 'DOB', 'team', name='uix_1'),)
 
+    def __init__(self, name_key, team, dob):
+        self.name_key = name_key
+        self.team = team
+        self.DOB = dob
+
     def __repr__(self):
         return "<Player(id='%s', number='%s', team='%s', \
 first_name='%s', last_name='%s', name_key='%s', games='%s', \

@@ -218,11 +218,8 @@ class TestFantasyScrape(BaseScraperTest):
 
 def add_player_to_db(player_id, name, team):
     # add player to put injury against
-    player = Player()
-    player.name_key = name
+    player = Player(name, team, datetime.date(1990, 1, 1))
     player.id = player_id
-    player.DOB = datetime.date(1990, 1, 1)
-    player.team = team
     with TestFantasyScrape.Session() as player_session:
         player_session.add(player)
         player_session.commit()

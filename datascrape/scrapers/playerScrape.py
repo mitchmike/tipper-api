@@ -89,8 +89,7 @@ def scrape_player(row):
 
 
 def populate_player(player_row, headers, team):
-    player = Player()
-    player.team = team
+    player = Player(None, team, None)
     player.updated_at = datetime.datetime.now()
     for i in range(len(player_row)):
         key = PLAYER_HEADER_MAP[headers[i]]

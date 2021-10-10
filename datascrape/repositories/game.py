@@ -19,6 +19,13 @@ class Game(Base):
     updated_at = Column(DateTime)
     match_stats_player = relationship("MatchStatsPlayer", back_populates="game")
 
+    def __init__(self, game_id, home_team, away_team, year, round_number):
+        self.id = game_id
+        self.home_team = home_team
+        self.away_team = away_team
+        self.year = year
+        self.round_number = round_number
+
     def __repr__(self):
         return "<Game(id='%s', home_team='%s', away_team='%s', \
 venue='%s', crowd='%s', home_score='%s', \

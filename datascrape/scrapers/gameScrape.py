@@ -86,9 +86,7 @@ def scrape_game(row):
 
 
 def populate_game(game_row, headers, year, round_number):
-    game = Game()
-    game.year = year
-    game.round_number = round_number
+    game = Game(None, None, None, year, round_number)
     game.updated_at = datetime.datetime.now()
     for i in range(len(game_row)):
         key = headers[i]
