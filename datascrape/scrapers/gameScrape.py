@@ -1,4 +1,4 @@
-import logging
+import logging.config
 import requests
 import bs4
 

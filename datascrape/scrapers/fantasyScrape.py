@@ -1,4 +1,4 @@
-import logging
+import logging.config
 
 import requests
 import bs4
@@ -130,7 +130,7 @@ def insert_fantasies(mode, fantasies, fantasy_year, fantasy_round, engine):
         LOGGER.info(f'{len(fantasies_persisted)} Records already found in DB for {fantasy_year}, round {fantasy_round}')
         for fantasy in fantasies:
             if fantasy.player_id is None:
-                LOGGER.info(f'Record is missing details required for persistance (player_id). doing nothing. Record: {fantasy}')
+                LOGGER.warning(f'Record is missing details required for persistence (player_id). Doing nothing. Record: {fantasy}')
                 continue
             db_match = [x[0] for x in fantasies_persisted
                         if fantasy.player_id == x[0].player_id
