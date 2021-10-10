@@ -9,45 +9,45 @@ import datetime
 import queue
 from threading import Thread
 
+from datascrape.MilestoneRecorder import MileStoneRecorder
 from datascrape.repositories.base import Base
 from datascrape.repositories.player import Player
 from datascrape.repositories.game import Game
 from datascrape.repositories.milestone import Milestone
 from datascrape.repositories.match_stats_player import MatchStatsPlayer
 
-engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
-Session = sessionmaker(bind=engine)
-milestone_session = Session()
 run_id = round(datetime.datetime.now().timestamp() * 1000)
-request_q = queue.Queue()
-response_q = queue.Queue()
 
 
 def main():
+    db_connection_string = 'postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable'
+    engine = create_engine(db_connection_string)
+    milestone_recorder = MileStoneRecorder(db_connection_string)
     start = datetime.datetime.now()
     Base.metadata.create_all(engine, checkfirst=True)
-    create_request_queue()  # synchronously create list of urls
-    threads = 10
+    request_q = populate_request_queue(2021, 2, engine)  # synchronously create list of urls
+    response_q = queue.Queue()
+    threads = 5
     for i in range(threads):
-        t = Thread(target=send_request)  # async create threads for sending requests
+        t = Thread(target=send_request, args=(request_q, response_q, milestone_recorder))  # async create threads for sending requests
         t.daemon = True
         t.start()
     # pick up responses and synchronously process them
     while True:
         response = response_q.get()
-        process_response(response)
+        process_response(response, milestone_recorder, engine)
         response_q.task_done()
         if len(request_q.queue) == 0 and len(response_q.queue) == 0:
             break
-    milestone_session.commit()
-    milestone_session.close()
+    milestone_recorder.commit_milestones()
     print(f"Total time taken: {datetime.datetime.now() - start}")
 
 
-def create_request_queue():
-    year = 2021
-    for round_number in range(60):
-        with Session() as games_session:
+def populate_request_queue(year, rounds, engine):
+    session = sessionmaker(bind=engine)
+    request_q = queue.Queue()
+    for round_number in range(rounds):
+        with session() as games_session:
             # get match ids for year / round
             matches = games_session.execute(select(Game.id).filter_by(year=year, round_number=round_number)).scalars().all()
             for match_id in matches:
@@ -55,9 +55,10 @@ def create_request_queue():
                     request_q.put({'year': year, 'round_number': round_number,
                                    'match_id': match_id, 'mode': mode,
                                    'url': None, 'response': None})
+    return request_q
 
 
-def send_request():  # need to run on threads
+def send_request(request_q, response_q, milestone_recorder):
     while not len(request_q.queue) == 0:  # request q is complete
         req = request_q.get()
         if req['mode'] == 'basic':
@@ -66,41 +67,41 @@ def send_request():  # need to run on threads
             req_url = f"https://www.footywire.com/afl/footy/ft_match_statistics?mid={req['match_id']}&advv=Y"
         req['url'] = req_url
         print(f'Thread {threading.get_ident()}: sending req: {req_url}')
-        add_milestone(req['match_id'], req['mode'], f"request_start")
+        add_milestone(req['match_id'], req['mode'], f"request_start", milestone_recorder)
         req['res'] = requests.get(req_url)
         print(f'Thread {threading.get_ident()}: got response for {req_url}')
-        add_milestone(req['match_id'], req['mode'], f"request_finish")
+        add_milestone(req['match_id'], req['mode'], f"request_finish", milestone_recorder)
         response_q.put(req)
         request_q.task_done()
 
 
-def process_response(res_obj):
+def process_response(res_obj, milestone_recorder, engine):
     year = res_obj['year']
     round_number = res_obj['round_number']
     match_id = res_obj['match_id']
     mode = res_obj['mode']
     url = res_obj['url']
     res = res_obj['res']
-    add_milestone(match_id, mode, f"match_start")
+    add_milestone(match_id, mode, f"match_start", milestone_recorder)
     print(f'Scraping match stats for year: {year}, round: {round_number}, match: {match_id}, url: {url}')
     soup = bs4.BeautifulSoup(res.text, 'lxml')
     for i in [0, 1]:  # both teams on match stats page
-        print(f'scraping for team: {"home" if i == 0 else "away"}')
+        print(f'Scraping for team: {"home" if i == 0 else "away"}')
         data = soup.select('.tbtitle')[i].parent.parent.select('.statdata')
         first_row = data[0].parent
         headers = [x.text for x in first_row.findPrevious('tr').find_all('td')]
-        add_milestone(match_id, mode, f'process_row_start_{i}')
-        match_stats_list = process_row(first_row, headers, [], match_id)
-        add_milestone(match_id, mode, f'process_row_finish_{i}')
-        upsert_match_stats(match_id, match_stats_list)
-        add_milestone(match_id, mode, f'persist_finish_{i}')
-    add_milestone(match_id, mode, "match_finish")
+        add_milestone(match_id, mode, f'process_row_start_{i}', milestone_recorder)
+        match_stats_list = process_row(first_row, headers, [], match_id, engine)
+        add_milestone(match_id, mode, f'process_row_finish_{i}', milestone_recorder)
+        upsert_match_stats(match_id, match_stats_list, engine)
+        add_milestone(match_id, mode, f'persist_finish_{i}', milestone_recorder)
+    add_milestone(match_id, mode, "match_finish", milestone_recorder)
 
 
-def process_row(row, headers, match_stats_list, match_id):
+def process_row(row, headers, match_stats_list, match_id, engine):
     try:
         stats_row = scrape_stats(row)
-        match_stats_player = populate_stats(stats_row, headers, match_id)
+        match_stats_player = populate_stats(stats_row, headers, match_id, engine)
     except ValueError as e:
         print(f'Exception processing row: {stats_row}: {e}')
         match_stats_player = None
@@ -108,7 +109,7 @@ def process_row(row, headers, match_stats_list, match_id):
         match_stats_list.append(match_stats_player)
     next_row = row.findNext('tr')
     if len(next_row.select('.statdata')):
-        process_row(next_row, headers, match_stats_list, match_id)
+        process_row(next_row, headers, match_stats_list, match_id, engine)
     return match_stats_list
 
 
@@ -124,7 +125,7 @@ def scrape_stats(row):
     return stats_row
 
 
-def populate_stats(stat_row, headers, match_id):
+def populate_stats(stat_row, headers, match_id, engine):
     match_stats_player = MatchStatsPlayer()
     match_stats_player.game_id = match_id
     match_stats_player.updated_at = datetime.datetime.now()
@@ -134,7 +135,7 @@ def populate_stats(stat_row, headers, match_id):
         if key == 'PLAYER':
             match_stats_player.team = value[0]
             match_stats_player.player_name = value[1]
-            match_stats_player.player_id = find_player_id(value[0], value[1])
+            match_stats_player.player_id = find_player_id(value[0], value[1], engine)
             if match_stats_player.player_id is None:
                 print(f'Player not in current season player list {value}. Adding without playerid.')
         elif key == "K":
@@ -203,32 +204,27 @@ def populate_stats(stat_row, headers, match_id):
     return match_stats_player
 
 
-def find_player_id(team_name, player_name):
-    Session = sessionmaker(bind=engine)
-    with Session() as session:
+def find_player_id(team_name, player_name, engine):
+    session = sessionmaker(bind=engine)
+    with session() as session:
         player = session.execute(select(Player).filter_by(team=team_name, name_key=player_name)).first()
         if player:
             return player[0].id
         return None
 
 
-def add_milestone(match_id, mode, milestone_name):
-    new_milestone = Milestone()
-    new_milestone.run_id = run_id
-    new_milestone.match_id = match_id
-    new_milestone.mode = mode
-    new_milestone.milestone = milestone_name
-    new_milestone.milestone_time = datetime.datetime.now()
-    milestone_session.add(new_milestone)
+def add_milestone(match_id, mode, milestone_name, milestone_recorder):
+    new_milestone = Milestone(run_id, match_id, mode, milestone_name)
+    milestone_recorder.add_milestone(new_milestone)
 
 
-def upsert_match_stats(match_id, match_stats_list):
-    Session = sessionmaker(bind=engine)
-    with Session() as session:
+def upsert_match_stats(match_id, match_stats_list, engine):
+    session = sessionmaker(bind=engine)
+    with session() as session:
         stats_from_db = session.execute(select(MatchStatsPlayer).filter_by(game_id=match_id)).all()
         for match_stats in match_stats_list:
             if match_stats.player_name is None or match_stats.team is None:
-                print(f'match_stats is missing details required for persistance. doing nothing. '
+                print(f'Match_stats is missing details required for persistance. doing nothing. '
                       f'match_stats: {match_stats}')
                 continue
             db_matches = [x[0] for x in stats_from_db if match_stats.game_id == x[0].game_id and match_stats.player_name

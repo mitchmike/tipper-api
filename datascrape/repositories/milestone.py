@@ -1,3 +1,5 @@
+import datetime
+
 from sqlalchemy import Column, Integer, String, DateTime, BigInteger, Sequence
 from datascrape.repositories.base import Base
 
@@ -11,6 +13,13 @@ class Milestone(Base):
     milestone = Column(String)
     milestone_time = Column(DateTime)
 
+    def __init__(self, run_id, match_id, mode, milestone_name):
+        self.run_id = run_id
+        self.match_id = match_id
+        self.mode = mode
+        self.milestone = milestone_name
+        self.milestone_time = datetime.datetime.now()
+
     def __repr__(self):
-        return "<Game(id='%s', matchid='%s', milestone='%s', milestone_time='%s')>" % (
-            self.id, self.match_id, self.milestone, self.milestone_time)
+        return "<Milestone(id='%s', runid='%s', matchid='%s', mode='%s', milestone='%s', milestone_time='%s')>" % (
+            self.id, self.run_id, self.match_id, self.mode, self.milestone, self.milestone_time)

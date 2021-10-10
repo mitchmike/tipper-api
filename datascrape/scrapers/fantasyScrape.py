@@ -84,7 +84,7 @@ def scrape_rows(table):
 
 
 def populate_fantasy(mode, fantasy_row, headers, fantasy_year, fantasy_round, engine):
-    Session = sessionmaker(bind=engine)
+    session = sessionmaker(bind=engine)
     fantasy = PlayerFantasy() if mode == 'dream_team' else PlayerSupercoach()
     fantasy.updated_at = datetime.datetime.now()
     fantasy.year = fantasy_year
@@ -99,7 +99,7 @@ def populate_fantasy(mode, fantasy_row, headers, fantasy_year, fantasy_round, en
         key = headers[i].lower()
         value = fantasy_row[i]
         if key == 'player':
-            with Session() as session:
+            with session() as session:
                 player = session.execute(select(Player).filter_by(team=team_name, name_key=value)).first()
                 if player:
                     fantasy.player_id = player[0].id
@@ -117,8 +117,8 @@ def populate_fantasy(mode, fantasy_row, headers, fantasy_year, fantasy_round, en
 
 
 def insert_fantasies(mode, fantasies, fantasy_year, fantasy_round, engine):
-    Session = sessionmaker(bind=engine)
-    with Session() as session:
+    session = sessionmaker(bind=engine)
+    with session() as session:
         fantasies_persisted = session.execute(select(PlayerFantasy if mode == 'dream_team' else PlayerSupercoach)
                                           .filter_by(year=fantasy_year, round=fantasy_round)).all()
         print(f'{len(fantasies_persisted)} Records already found in DB for {fantasy_year}, round {fantasy_round}')
