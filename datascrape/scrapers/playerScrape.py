@@ -1,3 +1,4 @@
+import logging
 import requests
 import bs4
 from sqlalchemy.orm import sessionmaker
@@ -6,8 +7,12 @@ from sqlalchemy import select
 import datetime
 import re
 
+from datascrape.logging_config import LOGGING_CONFIG
 from datascrape.repositories.base import Base
 from datascrape.repositories.player import Player
+
+logging.config.dictConfig(LOGGING_CONFIG)
+LOGGER = logging.getLogger(__name__)
 
 TEAMS = [
     'carlton-blues',
@@ -47,7 +52,7 @@ def main():
     engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
     Base.metadata.create_all(engine, checkfirst=True)
     for team in TEAMS:
-        print(f'Processing players for {team}...')
+        LOGGER.info(f'Processing players for {team}...')
         res = requests.get(f'https://www.footywire.com/afl/footy/tp-{team}')
         soup = bs4.BeautifulSoup(res.text, 'html.parser')
         data = soup.select('.data')
@@ -57,7 +62,7 @@ def main():
         headers = [x.text for x in first_row.findPrevious('tr').find_all('a')]
         # recursive function to continue through rows until they no longer have data children
         players = process_row(first_row, headers, team, [])
-        print(f'Found {len(players)} records for team: {team}. Upserting to database')
+        LOGGER.info(f'Found {len(players)} records for team: {team}. Upserting to database')
         upsert_team(team, players, engine)
 
 
@@ -66,7 +71,7 @@ def process_row(row, headers, team, players):
         player_row = scrape_player(row)
         player = populate_player(player_row, headers, team)
     except ValueError as e:
-        print(f'Exception processing row: {player_row}: {e}')
+        LOGGER.exception( f'Exception processing row: {player_row}: {e}')
         player = None
     if player:
         players.append(player)
@@ -120,25 +125,25 @@ def populate_player(player_row, headers, team):
 
 
 def upsert_team(team, players, engine):
-    Session = sessionmaker(bind=engine)
-    with Session() as session:
+    session = sessionmaker(bind=engine)
+    with session() as session:
         players_from_db = session.execute(select(Player).filter_by(team=team)).all()
         for player in players:
             if player.name_key is None or player.team is None or player.DOB is None:
-                print(f'Player is missing details required for persistance. doing nothing. Player: {player}')
+                LOGGER.debug(f'Player is missing details required for persistance. doing nothing. Player: {player}')
                 continue
             db_matches = [x[0] for x in players_from_db if player.name_key == x[0].name_key and player.DOB == x[0].DOB]
             if len(db_matches) > 0:
                 # just add the id to our obj, then merge, then commit session
                 player.id = db_matches[0].id
             else:
-                print(f'New player: {player.first_name} {player.last_name} will be added to DB')
+                LOGGER.debug(f'New player: {player.first_name} {player.last_name} will be added to DB')
             try:
                 session.merge(player)  # merge updates if id exists and adds new if it doesnt
                 session.commit()
             except Exception as e:
-                print(f'Caught exception {e} \n'
-                      f'Rolling back {player}')
+                LOGGER.exception(f'Caught exception {e} \n'
+                                 f'Rolling back {player}')
                 session.rollback()
 
 

@@ -1,3 +1,5 @@
+import logging
+
 import requests
 import bs4
 from sqlalchemy.orm import sessionmaker
@@ -6,9 +8,13 @@ from sqlalchemy import select
 
 import datetime
 
+from datascrape.logging_config import LOGGING_CONFIG
 from datascrape.repositories.base import Base
 from datascrape.repositories.player import Player
 from datascrape.repositories.injury import Injury
+
+logging.config.dictConfig(LOGGING_CONFIG)
+LOGGER = logging.getLogger(__name__)
 
 HEADER_MAP = {
     'Player': 'player',
@@ -49,14 +55,14 @@ def main():
     injuries = []
     for team in data:
         team_name = TEAMS[team.text.split('(')[0].strip()]
-        print(f'Processing data for {team_name} ')
+        LOGGER.info(f'Processing data for {team_name} ')
         # rows of team table including headers
         team_table = team.parent.findNext('tr').findAll('tr')
         headers = []
         for header in team_table[0].findAll('td'):
             headers.append(header.text.strip())
         data_rows = scrape_rows(team_table)
-        print(f'Found {len(data_rows)} injuries for {team_name}')
+        LOGGER.info(f'Found {len(data_rows)} injuries for {team_name}')
         for injury in data_rows:
             injuries.append(populate_injury(injury, team_name, headers, engine))
     # persist all injuries in one go
@@ -78,7 +84,7 @@ def scrape_rows(team_table):
 
 
 def populate_injury(injury_row, team_name, headers, engine):
-    Session = sessionmaker(bind=engine)
+    session = sessionmaker(bind=engine)
     injury = Injury()
     for i in range(len(injury_row)):
         key = HEADER_MAP[headers[i]]
@@ -86,12 +92,12 @@ def populate_injury(injury_row, team_name, headers, engine):
         injury.recovered = False
         injury.updated_at = datetime.datetime.now()
         if key == 'player':
-            with Session() as session:
+            with session() as session:
                 player = session.execute(select(Player).filter_by(team=team_name, name_key=value)).first()
                 if player:
                     injury.player_id = player[0].id
                 else:
-                    print(f'no player for {injury_row}, {value}')
+                    LOGGER.info(f'no player for {injury_row}, {value}')
         elif key == 'injury':
             injury.injury = value
         elif key == 'returning':
@@ -100,9 +106,9 @@ def populate_injury(injury_row, team_name, headers, engine):
 
 
 def upsert_injuries(injury_list, engine):
-    Session = sessionmaker(bind=engine)
-    print(f'Upserting {len(injury_list)} records to database')
-    with Session() as upsert_session:
+    session = sessionmaker(bind=engine)
+    LOGGER.info(f'Upserting {len(injury_list)} records to database')
+    with session() as upsert_session:
         injuries_persisted = upsert_session.execute(select(Injury)).all()
         for injury in injuries_persisted:
             # all are recovered unless they appear in the scrape results
@@ -116,7 +122,7 @@ def upsert_injuries(injury_list, engine):
         try:
             upsert_session.commit()
         except Exception as e:
-            print(f'Could not commit injuries: {injury_list} due to exception: {e} \n Rolling back')
+            LOGGER.exception(f'Could not commit injuries: {injury_list} due to exception: {e} \n Rolling back')
             upsert_session.rollback()
 
 

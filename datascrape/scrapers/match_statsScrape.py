@@ -1,5 +1,4 @@
 import threading
-
 import requests
 import bs4
 from sqlalchemy.orm import sessionmaker
@@ -7,14 +6,19 @@ from sqlalchemy import create_engine
 from sqlalchemy import select
 import datetime
 import queue
+import logging.config
 from threading import Thread
 
+from datascrape.logging_config import LOGGING_CONFIG
 from datascrape.MilestoneRecorder import MileStoneRecorder
 from datascrape.repositories.base import Base
 from datascrape.repositories.player import Player
 from datascrape.repositories.game import Game
 from datascrape.repositories.milestone import Milestone
 from datascrape.repositories.match_stats_player import MatchStatsPlayer
+
+logging.config.dictConfig(LOGGING_CONFIG)
+LOGGER = logging.getLogger(__name__)
 
 run_id = round(datetime.datetime.now().timestamp() * 1000)
 
@@ -25,7 +29,7 @@ def main():
     milestone_recorder = MileStoneRecorder(db_connection_string)
     start = datetime.datetime.now()
     Base.metadata.create_all(engine, checkfirst=True)
-    request_q = populate_request_queue(2021, 2, engine)  # synchronously create list of urls
+    request_q = populate_request_queue(2021, 50, engine)  # synchronously create list of urls
     response_q = queue.Queue()
     threads = 5
     for i in range(threads):
@@ -40,7 +44,7 @@ def main():
         if len(request_q.queue) == 0 and len(response_q.queue) == 0:
             break
     milestone_recorder.commit_milestones()
-    print(f"Total time taken: {datetime.datetime.now() - start}")
+    LOGGER.info(f"Total time taken: {datetime.datetime.now() - start}")
 
 
 def populate_request_queue(year, rounds, engine):
@@ -66,10 +70,10 @@ def send_request(request_q, response_q, milestone_recorder):
         else:
             req_url = f"https://www.footywire.com/afl/footy/ft_match_statistics?mid={req['match_id']}&advv=Y"
         req['url'] = req_url
-        print(f'Thread {threading.get_ident()}: sending req: {req_url}')
+        LOGGER.debug(f'Thread {threading.get_ident()}: sending req: {req_url}')
         add_milestone(req['match_id'], req['mode'], f"request_start", milestone_recorder)
         req['response'] = requests.get(req_url).text
-        print(f'Thread {threading.get_ident()}: got response for {req_url}')
+        LOGGER.debug(f'Thread {threading.get_ident()}: got response for {req_url}')
         add_milestone(req['match_id'], req['mode'], f"request_finish", milestone_recorder)
         response_q.put(req)
         request_q.task_done()
@@ -83,10 +87,10 @@ def process_response(res_obj, milestone_recorder, engine):
     url = res_obj['url']
     res = res_obj['response']
     add_milestone(match_id, mode, f"match_start", milestone_recorder)
-    print(f'Scraping match stats for year: {year}, round: {round_number}, match: {match_id}, url: {url}')
+    LOGGER.info(f'Scraping match stats for year: {year}, round: {round_number}, match: {match_id}, url: {url}')
     soup = bs4.BeautifulSoup(res, 'lxml')
     for i in [0, 1]:  # both teams on match stats page
-        print(f'Scraping for team: {"home" if i == 0 else "away"}')
+        LOGGER.debug(f'Scraping for team: {"home" if i == 0 else "away"}')
         data = soup.select('.tbtitle')[i].parent.parent.select('.statdata')
         first_row = data[0].parent
         headers = [x.text for x in first_row.findPrevious('tr').find_all('td')]
@@ -103,7 +107,7 @@ def process_row(row, headers, match_stats_list, match_id, engine):
         stats_row = scrape_stats(row)
         match_stats_player = populate_stats(stats_row, headers, match_id, engine)
     except ValueError as e:
-        print(f'Exception processing row: {stats_row}: {e}')
+        LOGGER.exception(f'Exception processing row: {stats_row}: {e}')
         match_stats_player = None
     if match_stats_player:
         match_stats_list.append(match_stats_player)
@@ -137,7 +141,7 @@ def populate_stats(stat_row, headers, match_id, engine):
             match_stats_player.player_name = value[1]
             match_stats_player.player_id = find_player_id(value[0], value[1], engine)
             if match_stats_player.player_id is None:
-                print(f'Player not in current season player list {value}. Adding without playerid.')
+                LOGGER.info(f'Player not in current season player list {value}. Adding without playerid.')
         elif key == "K":
             match_stats_player.kicks = int(value)
         elif key == "HB":
@@ -224,23 +228,20 @@ def upsert_match_stats(match_id, match_stats_list, engine):
         stats_from_db = session.execute(select(MatchStatsPlayer).filter_by(game_id=match_id)).all()
         for match_stats in match_stats_list:
             if match_stats.player_name is None or match_stats.team is None:
-                print(f'Match_stats is missing details required for persistance. doing nothing. '
-                      f'match_stats: {match_stats}')
+                LOGGER.warning(f'Match_stats is missing details required for persistance. doing nothing. '
+                               f'match_stats: {match_stats}')
                 continue
             db_matches = [x[0] for x in stats_from_db if match_stats.game_id == x[0].game_id and match_stats.player_name
                           == x[0].player_name and match_stats.team == x[0].team]
             if len(db_matches) > 0:
                 # just add the id to our obj, then merge, then commit session
                 match_stats.id = db_matches[0].id
-            # else:
-                # print(f'New match_stat: match_id:{match_stats.game_id} player:{match_stats.player_name}'
-                #       f' team:{match_stats.team} will be added to DB')
             session.merge(match_stats)  # merge updates if id exists and adds new if it doesnt
         try:
             session.commit()
         except Exception as e:
-            print(f'Caught exception {e} \n'
-                  f'Rolling back {match_stats_list}')
+            LOGGER.warning(f'Caught exception {e} \n'
+                           f'Rolling back {match_stats_list}')
             session.rollback()
 
 

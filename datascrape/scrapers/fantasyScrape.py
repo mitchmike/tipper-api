@@ -1,3 +1,5 @@
+import logging
+
 import requests
 import bs4
 from sqlalchemy.orm import sessionmaker
@@ -9,37 +11,41 @@ import datetime
 import re
 import os
 
+from datascrape.logging_config import LOGGING_CONFIG
 from datascrape.repositories.base import Base
 from datascrape.repositories.player import Player
 from datascrape.repositories.player_fantasy import PlayerFantasy
 from datascrape.repositories.player_supercoach import PlayerSupercoach
+
+logging.config.dictConfig(LOGGING_CONFIG)
+LOGGER = logging.getLogger(__name__)
 
 
 def main():
     engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
     Base.metadata.create_all(engine, checkfirst=True)
     year = 2021
-    # TODO: parameterise round / year / find current round based on date / call to footywire.
+    # TODO: parameterise round_number / year / find current round_number based on date / call to footywire.
     for mode in ['dream_team', 'supercoach']:
-        for round in range(1, 25):
-            print(f'Scraping {mode} points for year: {year} and round {round}')
-            url = f'https://www.footywire.com/afl/footy/{mode}_round?year={year}&round={round}&p=&s=T'
+        for round_number in range(1, 25):
+            LOGGER.info(f'Scraping {mode} points for year: {year} and round_number {round_number}')
+            url = f'https://www.footywire.com/afl/footy/{mode}_round?year={year}&round_number={round_number}&p=&s=T'
             res = requests.get(url)
             soup = bs4.BeautifulSoup(res.text, 'html.parser')
             try:
                 table, headers = get_data_table(soup)
             except Exception as e:
-                print(f'Failed to parse data for {year} round {round}. Exception was: {e}')
+                LOGGER.error(f'Failed to parse data for {year} round_number {round_number}. Exception was: {e}')
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                print(exc_type, fname, exc_tb.tb_lineno)
+                LOGGER.error(exc_type, fname, exc_tb.tb_lineno)
                 continue
             data_rows = scrape_rows(table)
-            print(f'Found {len(data_rows)} fantasy records for {year}, round {round}')
+            LOGGER.info(f'Found {len(data_rows)} fantasy records for {year}, round_number {round_number}')
             fantasies = []
             for row in data_rows:
-                fantasies.append(populate_fantasy(mode, row, headers, year, round, engine))
-            insert_fantasies(mode, fantasies, year, round, engine)
+                fantasies.append(populate_fantasy(mode, row, headers, year, round_number, engine))
+            insert_fantasies(mode, fantasies, year, round_number, engine)
 
 
 def get_data_table(soup):
@@ -77,7 +83,7 @@ def scrape_rows(table):
                             fantasy_row.append(href.split('--')[1])
                             continue
                     except KeyError:
-                        print(f'Cannot scrape cell due to missing href in link: {d}')
+                        LOGGER.warning(f'Cannot scrape cell due to missing href in link: {d}')
                 fantasy_row.append(d.text.strip().split('\n')[0])
         rows.append(fantasy_row)
     return rows
@@ -104,7 +110,7 @@ def populate_fantasy(mode, fantasy_row, headers, fantasy_year, fantasy_round, en
                 if player:
                     fantasy.player_id = player[0].id
                 else:
-                    print(f'no player for {fantasy_row}, {value}')
+                    LOGGER.warning(f'no player for {fantasy_row}, {value}')
         elif key == 'rank':
             fantasy.round_ranking = value
         elif key == 'round_salary':
@@ -121,10 +127,10 @@ def insert_fantasies(mode, fantasies, fantasy_year, fantasy_round, engine):
     with session() as session:
         fantasies_persisted = session.execute(select(PlayerFantasy if mode == 'dream_team' else PlayerSupercoach)
                                           .filter_by(year=fantasy_year, round=fantasy_round)).all()
-        print(f'{len(fantasies_persisted)} Records already found in DB for {fantasy_year}, round {fantasy_round}')
+        LOGGER.info(f'{len(fantasies_persisted)} Records already found in DB for {fantasy_year}, round {fantasy_round}')
         for fantasy in fantasies:
             if fantasy.player_id is None:
-                print(f'Record is missing details required for persistance (player_id). doing nothing. Record: {fantasy}')
+                LOGGER.info(f'Record is missing details required for persistance (player_id). doing nothing. Record: {fantasy}')
                 continue
             db_match = [x[0] for x in fantasies_persisted
                         if fantasy.player_id == x[0].player_id
@@ -137,7 +143,7 @@ def insert_fantasies(mode, fantasies, fantasy_year, fantasy_round, engine):
         try:
             session.commit()
         except Exception as e:
-            print(f'Could not commit fantasy: {fantasies} due to exception: {e} \n Rolling back')
+            LOGGER.exception(f'Could not commit fantasy: {fantasies} due to exception: {e} \n Rolling back')
             session.rollback()
 
 

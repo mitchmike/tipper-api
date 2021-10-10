@@ -1,3 +1,4 @@
+import logging
 import requests
 import bs4
 
@@ -6,8 +7,12 @@ from sqlalchemy import create_engine
 from sqlalchemy import select
 import datetime
 
+from datascrape.logging_config import LOGGING_CONFIG
 from datascrape.repositories.base import Base
 from datascrape.repositories.game import Game
+
+logging.config.dictConfig(LOGGING_CONFIG)
+LOGGER = logging.getLogger(__name__)
 
 FINAL_ROUNDS = {
     'qualifying final': 50,
@@ -24,7 +29,7 @@ def main():
 
     for year in range(2015, 2022):
         start = datetime.datetime.now()
-        print(f'Processing games from footywire for year: {year}')
+        LOGGER.info(f'Processing games from footywire for year: {year}')
         res = requests.get(f'https://www.footywire.com/afl/footy/ft_match_list?year={year}')
         soup = bs4.BeautifulSoup(res.text, 'html.parser')
         data = soup.select('.data')
@@ -35,7 +40,7 @@ def main():
         # recursive function to continue through rows until they no longer have data children
         games = process_row(first_row, headers, [], year, 1)
         upsert_games(games, engine)
-        print(f'Time taken: {datetime.datetime.now() - start}')
+        LOGGER.info(f'Time taken: {datetime.datetime.now() - start}')
 
 
 def process_row(row, headers, games, year, round_number):
@@ -44,7 +49,7 @@ def process_row(row, headers, games, year, round_number):
             game_row = scrape_game(row)
             game = populate_game(game_row, headers, year, round_number)
         except ValueError as e:
-            print(f'Exception processing row: {game_row}: {e}')
+            LOGGER.exception(f'Exception processing row: {game_row}: {e}')
             game = None
         if game:
             games.append(game)
@@ -130,21 +135,21 @@ def populate_game(game_row, headers, year, round_number):
 
 
 def upsert_games(games, engine):
-    print(f'Upserting {len(games)} game(s) to the database')
-    Session = sessionmaker(bind=engine)
-    with Session() as session:
+    LOGGER.info(f'Upserting {len(games)} game(s) to the database')
+    session = sessionmaker(bind=engine)
+    with session() as session:
         for game in games:
             if game.id is None or game.home_team is None or game.away_team is None:
-                print(f'Game is missing details required for persistance. doing nothing. Game: {game}')
+                LOGGER.warning(f'Game is missing details required for persistance. doing nothing. Game: {game}')
                 continue
             if not session.execute(select(Game).filter_by(id=game.id)).first():
-                print(f'New game: year: {game.year}, round: {game.round_number}, {game.home_team} v {game.away_team} '
+                LOGGER.info(f'New game: year: {game.year}, round: {game.round_number}, {game.home_team} v {game.away_team} '
                       f'will be added to DB')
             try:
                 session.merge(game)
                 session.commit()
             except Exception as e:
-                print(f'Caught exception {e} \n'
+                LOGGER.exception(f'Caught exception {e} \n'
                       f'Rolling back {game}')
                 session.rollback()
 
@@ -152,4 +157,4 @@ def upsert_games(games, engine):
 if __name__ == '__main__':
     start_all = datetime.datetime.now()
     main()
-    print(f'Total time taken: {datetime.datetime.now() - start_all}')
+    LOGGER.info(f'Total time taken: {datetime.datetime.now() - start_all}')
