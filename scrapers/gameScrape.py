@@ -7,9 +7,9 @@ from sqlalchemy import create_engine
 from sqlalchemy import select
 import datetime
 
-from datascrape.logging_config import LOGGING_CONFIG
-from datascrape.repositories.base import Base
-from datascrape.repositories.game import Game
+from logging_config import LOGGING_CONFIG
+from repositories.base import Base
+from repositories.game import Game
 
 logging.config.dictConfig(LOGGING_CONFIG)
 LOGGER = logging.getLogger(__name__)
@@ -23,11 +23,12 @@ FINAL_ROUNDS = {
 }
 
 
-def main():
+def main(from_year, to_year):
+    LOGGER.info("Starting GAME SCRAPE")
     engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
     Base.metadata.create_all(engine, checkfirst=True)
 
-    for year in range(2015, 2022):
+    for year in range(from_year, to_year + 1):
         start = datetime.datetime.now()
         LOGGER.info(f'Processing games from footywire for year: {year}')
         res = requests.get(f'https://www.footywire.com/afl/footy/ft_match_list?year={year}')
@@ -41,6 +42,7 @@ def main():
         games = process_row(first_row, headers, [], year, 1)
         upsert_games(games, engine)
         LOGGER.info(f'Time taken: {datetime.datetime.now() - start}')
+    LOGGER.info("Finished GAME SCRAPE")
 
 
 def process_row(row, headers, games, year, round_number):
@@ -156,5 +158,5 @@ def upsert_games(games, engine):
 
 if __name__ == '__main__':
     start_all = datetime.datetime.now()
-    main()
+    main(2021, 2021)
     LOGGER.info(f'Total time taken: {datetime.datetime.now() - start_all}')

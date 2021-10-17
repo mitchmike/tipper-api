@@ -1,13 +1,13 @@
 import os
-import get_html
-from test.BaseScraperTest import BaseScraperTest, TEST_DB_CONN_STRING
-from datascrape.scrapers.match_statsScrape import *
+from test import get_html
+from test.scrapertest.BaseScraperTest import BaseScraperTest, TEST_DB_CONN_STRING
+from scrapers.match_statsScrape import *
 
 
 class TestMatchStatsScrape(BaseScraperTest):
     DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-    HTML_SOURCE_FILE = os.path.join(DIR_PATH, 'html_files', get_html.MATCH_STATS_FILE_NAME)
-    HTML_SOURCE_FILE_ADV = os.path.join(DIR_PATH, 'html_files', get_html.MATCH_STATS_ADV_FILE_NAME)
+    HTML_SOURCE_FILE = os.path.join(DIR_PATH, '../html_files', get_html.MATCH_STATS_FILE_NAME)
+    HTML_SOURCE_FILE_ADV = os.path.join(DIR_PATH, '../html_files', get_html.MATCH_STATS_ADV_FILE_NAME)
 
     def setUp(self):
         with TestMatchStatsScrape.Session() as cleanup_session:
@@ -29,7 +29,7 @@ class TestMatchStatsScrape(BaseScraperTest):
             add_games_for_test.add(Game(7, 'c', 'd', 2021, 1))
             add_games_for_test.add(Game(10, 'a', 'b', 2021, 5))  # out of round_number range
             add_games_for_test.commit()
-        request_q = populate_request_queue(2021, 4, TestMatchStatsScrape._engine)
+        request_q = populate_request_queue(2021, 2021, 1, 4, TestMatchStatsScrape._engine)
         self.assertEqual(request_q.unfinished_tasks, 4)
         first_queue_item = request_q.get()
         self.assertEqual(first_queue_item['year'], 2021)

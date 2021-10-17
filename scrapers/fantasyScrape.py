@@ -11,41 +11,42 @@ import datetime
 import re
 import os
 
-from datascrape.logging_config import LOGGING_CONFIG
-from datascrape.repositories.base import Base
-from datascrape.repositories.player import Player
-from datascrape.repositories.player_fantasy import PlayerFantasy
-from datascrape.repositories.player_supercoach import PlayerSupercoach
+from logging_config import LOGGING_CONFIG
+from repositories.base import Base
+from repositories.player import Player
+from repositories.player_fantasy import PlayerFantasy
+from repositories.player_supercoach import PlayerSupercoach
 
 logging.config.dictConfig(LOGGING_CONFIG)
 LOGGER = logging.getLogger(__name__)
 
 
-def main():
+def main(from_year, to_year, from_round, to_round):
+    LOGGER.info("Starting FANTASY SCRAPE")
     engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
     Base.metadata.create_all(engine, checkfirst=True)
-    year = 2021
-    # TODO: parameterise round_number / year / find current round_number based on date / call to footywire.
-    for mode in ['dream_team', 'supercoach']:
-        for round_number in range(1, 25):
-            LOGGER.info(f'Scraping {mode} points for year: {year} and round_number {round_number}')
-            url = f'https://www.footywire.com/afl/footy/{mode}_round?year={year}&round_number={round_number}&p=&s=T'
-            res = requests.get(url)
-            soup = bs4.BeautifulSoup(res.text, 'html.parser')
-            try:
-                table, headers = get_data_table(soup)
-            except Exception as e:
-                LOGGER.error(f'Failed to parse data for {year} round_number {round_number}. Exception was: {e}')
-                exc_type, exc_obj, exc_tb = sys.exc_info()
-                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                LOGGER.error(exc_type, fname, exc_tb.tb_lineno)
-                continue
-            data_rows = scrape_rows(table)
-            LOGGER.info(f'Found {len(data_rows)} fantasy records for {year}, round_number {round_number}')
-            fantasies = []
-            for row in data_rows:
-                fantasies.append(populate_fantasy(mode, row, headers, year, round_number, engine))
-            insert_fantasies(mode, fantasies, year, round_number, engine)
+    for year in range(from_year, to_year + 1):
+        for mode in ['dream_team', 'supercoach']:
+            for round_number in range(from_round, to_round + 1):
+                LOGGER.info(f'Scraping {mode} points for year: {year} and round_number {round_number}')
+                url = f'https://www.footywire.com/afl/footy/{mode}_round?year={year}&round_number={round_number}&p=&s=T'
+                res = requests.get(url)
+                soup = bs4.BeautifulSoup(res.text, 'html.parser')
+                try:
+                    table, headers = get_data_table(soup)
+                except Exception as e:
+                    LOGGER.error(f'Failed to parse data for {year} round_number {round_number}. Exception was: {e}')
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                    LOGGER.error(exc_type, fname, exc_tb.tb_lineno)
+                    continue
+                data_rows = scrape_rows(table)
+                LOGGER.info(f'Found {len(data_rows)} fantasy records for {year}, round_number {round_number}')
+                fantasies = []
+                for row in data_rows:
+                    fantasies.append(populate_fantasy(mode, row, headers, year, round_number, engine))
+                insert_fantasies(mode, fantasies, year, round_number, engine)
+    LOGGER.info("Finished FANTASY SCRAPE")
 
 
 def get_data_table(soup):
@@ -148,4 +149,4 @@ def insert_fantasies(mode, fantasies, fantasy_year, fantasy_round, engine):
 
 
 if __name__ == '__main__':
-    main()
+    main(2021, 2021, 1, 30)

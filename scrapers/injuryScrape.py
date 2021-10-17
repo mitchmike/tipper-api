@@ -8,10 +8,10 @@ from sqlalchemy import select
 
 import datetime
 
-from datascrape.logging_config import LOGGING_CONFIG
-from datascrape.repositories.base import Base
-from datascrape.repositories.player import Player
-from datascrape.repositories.injury import Injury
+from logging_config import LOGGING_CONFIG
+from repositories.base import Base
+from repositories.player import Player
+from repositories.injury import Injury
 
 logging.config.dictConfig(LOGGING_CONFIG)
 LOGGER = logging.getLogger(__name__)
@@ -46,6 +46,7 @@ TEAMS = {
 
 
 def main():
+    LOGGER.info("Starting INJURY SCRAPE")
     engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
     Base.metadata.create_all(engine, checkfirst=True)
     res = requests.get(f'https://www.footywire.com/afl/footy/injury_list')
@@ -67,6 +68,8 @@ def main():
             injuries.append(populate_injury(injury, team_name, headers, engine))
     # persist all injuries in one go
     upsert_injuries(injuries, engine)
+    LOGGER.info("Finished INJURY SCRAPE")
+
 
 
 def scrape_rows(team_table):

@@ -1,6 +1,6 @@
-from sqlalchemy import Column, Integer, Float, String, Date, DateTime, Sequence, ForeignKey
+from sqlalchemy import Column, Integer, Float, String, DateTime, Sequence, ForeignKey
 from sqlalchemy.orm import relationship
-from datascrape.repositories.base import Base
+from repositories.base import Base
 
 
 class MatchStatsPlayer(Base):

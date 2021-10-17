@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.orm import relationship
-from datascrape.repositories.base import Base
+from repositories.base import Base
 
 
 class Game(Base):

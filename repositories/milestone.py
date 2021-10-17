@@ -1,7 +1,7 @@
 import datetime
 
 from sqlalchemy import Column, Integer, String, DateTime, BigInteger, Sequence
-from datascrape.repositories.base import Base
+from repositories.base import Base
 
 
 class Milestone(Base):

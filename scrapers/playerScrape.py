@@ -7,9 +7,9 @@ from sqlalchemy import select
 import datetime
 import re
 
-from datascrape.logging_config import LOGGING_CONFIG
-from datascrape.repositories.base import Base
-from datascrape.repositories.player import Player
+from logging_config import LOGGING_CONFIG
+from repositories.base import Base
+from repositories.player import Player
 
 logging.config.dictConfig(LOGGING_CONFIG)
 LOGGER = logging.getLogger(__name__)
@@ -49,6 +49,7 @@ PLAYER_HEADER_MAP = {
 
 
 def main():
+    LOGGER.info("Starting PLAYER SCRAPE")
     engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
     Base.metadata.create_all(engine, checkfirst=True)
     for team in TEAMS:
@@ -64,6 +65,7 @@ def main():
         players = process_row(first_row, headers, team, [])
         LOGGER.info(f'Found {len(players)} records for team: {team}. Upserting to database')
         upsert_team(team, players, engine)
+    LOGGER.info("Finished PLAYER SCRAPE")
 
 
 def process_row(row, headers, team, players):
@@ -71,7 +73,7 @@ def process_row(row, headers, team, players):
         player_row = scrape_player(row)
         player = populate_player(player_row, headers, team)
     except ValueError as e:
-        LOGGER.exception( f'Exception processing row: {player_row}: {e}')
+        LOGGER.error(f'Exception processing row: {player_row}: {e}')
         player = None
     if player:
         players.append(player)

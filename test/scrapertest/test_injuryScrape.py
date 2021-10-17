@@ -3,19 +3,19 @@ import datetime
 import bs4
 import os
 
-from datascrape.scrapers import injuryScrape
-from datascrape.repositories import base
-from datascrape.repositories.player import Player
-from datascrape.repositories.injury import Injury
-from datascrape.scrapers.injuryScrape import TEAMS
+from scrapers import injuryScrape
+from repositories import base
+from repositories import Player
+from repositories.injury import Injury
+from scrapers.injuryScrape import TEAMS
 from test import get_html
-from test.BaseScraperTest import BaseScraperTest
+from test.scrapertest.BaseScraperTest import BaseScraperTest
 
 
 class TestInjuryScrape(BaseScraperTest):
     # for testing the entire html document
     DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-    HTML_SOURCE_FILE = os.path.join(DIR_PATH, 'html_files', get_html.INJURY_FILE_NAME)
+    HTML_SOURCE_FILE = os.path.join(DIR_PATH, '../html_files', get_html.INJURY_FILE_NAME)
     TEAM = 'adelaide-crows'
 
     # for testing an individual row

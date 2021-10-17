@@ -6,18 +6,18 @@ import os
 import copy
 
 from sqlalchemy import select
-from datascrape.scrapers import playerScrape
-from datascrape.repositories import base
-from datascrape.repositories.player import Player
+from scrapers import playerScrape
+from repositories import base
+from repositories import Player
 from test import get_html
-from test.BaseScraperTest import BaseScraperTest
+from test.scrapertest.BaseScraperTest import BaseScraperTest
 
 
 class TestPlayerScrape(BaseScraperTest):
 
     # for testing the entire html document
     DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-    HTML_SOURCE_FILE = os.path.join(DIR_PATH, 'html_files', get_html.PLAYER_FILE_NAME)
+    HTML_SOURCE_FILE = os.path.join(DIR_PATH, '../html_files', get_html.PLAYER_FILE_NAME)
     TEAM = 'richmond-tigers'
 
     # for testing an individual row

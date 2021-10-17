@@ -9,13 +9,13 @@ import queue
 import logging.config
 from threading import Thread
 
-from datascrape.logging_config import LOGGING_CONFIG
-from datascrape.MilestoneRecorder import MileStoneRecorder
-from datascrape.repositories.base import Base
-from datascrape.repositories.player import Player
-from datascrape.repositories.game import Game
-from datascrape.repositories.milestone import Milestone
-from datascrape.repositories.match_stats_player import MatchStatsPlayer
+from logging_config import LOGGING_CONFIG
+from util.MilestoneRecorder import MileStoneRecorder
+from repositories.base import Base
+from repositories.player import Player
+from repositories.game import Game
+from repositories.milestone import Milestone
+from repositories.match_stats_player import MatchStatsPlayer
 
 logging.config.dictConfig(LOGGING_CONFIG)
 LOGGER = logging.getLogger(__name__)
@@ -23,13 +23,14 @@ LOGGER = logging.getLogger(__name__)
 run_id = round(datetime.datetime.now().timestamp() * 1000)
 
 
-def main():
+def main(from_year, to_year, from_round, to_round):
+    LOGGER.info("Starting MATCH STATS SCRAPE")
     db_connection_string = 'postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable'
     engine = create_engine(db_connection_string)
     milestone_recorder = MileStoneRecorder(db_connection_string)
     start = datetime.datetime.now()
     Base.metadata.create_all(engine, checkfirst=True)
-    request_q = populate_request_queue(2021, 50, engine)  # synchronously create list of urls
+    request_q = populate_request_queue(from_year, to_year, from_round, to_round, engine)  # synchronously create list of urls
     response_q = queue.Queue()
     threads = 5
     for i in range(threads):
@@ -45,20 +46,22 @@ def main():
             break
     milestone_recorder.commit_milestones()
     LOGGER.info(f"Total time taken: {datetime.datetime.now() - start}")
+    LOGGER.info("Finished MATCH STATS SCRAPE")
 
 
-def populate_request_queue(year, rounds, engine):
+def populate_request_queue(from_year, to_year, from_round, to_round, engine):
     session = sessionmaker(bind=engine)
     request_q = queue.Queue()
-    for round_number in range(rounds):
-        with session() as games_session:
-            # get match ids for year / round
-            matches = games_session.execute(select(Game.id).filter_by(year=year, round_number=round_number)).scalars().all()
-            for match_id in matches:
-                for mode in ['basic', 'advanced']:  # advanced stats on 2nd link
-                    request_q.put({'year': year, 'round_number': round_number,
-                                   'match_id': match_id, 'mode': mode,
-                                   'url': None, 'response': None})
+    for year in range(from_year, to_year + 1):
+        for round_number in range(from_round, to_round + 1):
+            with session() as games_session:
+                # get match ids for year / round
+                matches = games_session.execute(select(Game.id).filter_by(year=year, round_number=round_number)).scalars().all()
+                for match_id in matches:
+                    for mode in ['basic', 'advanced']:  # advanced stats on 2nd link
+                        request_q.put({'year': year, 'round_number': round_number,
+                                       'match_id': match_id, 'mode': mode,
+                                       'url': None, 'response': None})
     return request_q
 
 
@@ -246,4 +249,4 @@ def upsert_match_stats(match_id, match_stats_list, engine):
 
 
 if __name__ == '__main__':
-    main()
+    main(2021, 2021, 1, 30)
