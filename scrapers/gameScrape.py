@@ -58,7 +58,10 @@ def process_row(row, headers, games, year, round_number):
     elif len(row.select('.tbtitle')):  # round header
         round_string = row.select('.tbtitle')[0].text.strip()
         if 'final' in round_string.lower():
-            round_number = FINAL_ROUNDS[round_string.lower()]
+            try:
+                round_number = FINAL_ROUNDS[round_string.lower()]
+            except KeyError as e:
+                LOGGER.exception(e)
         else:
             round_number = int(row.select('.tbtitle')[0].text.strip().split()[1])
     next_row = row.findNext('tr')
@@ -100,7 +103,10 @@ def populate_game(game_row, headers, year, round_number):
         value = game_row[i]
         if key == 'Date':
             if value:
-                game.date_time = datetime.datetime.strptime(value + str(year), '%a %d %b %I:%M%p%Y')
+                try:
+                    game.date_time = datetime.datetime.strptime(value + str(year), '%a %d %b %I:%M%p%Y')
+                except ValueError:
+                    LOGGER.warning(f'Unexpected date format for value: {value}, expected like Fri 26 Mar 7:45pm')
         elif key == 'Home v Away Teams':
             if type(value) == list:
                 game.home_team = value[0]
@@ -158,5 +164,5 @@ def upsert_games(games, engine):
 
 if __name__ == '__main__':
     start_all = datetime.datetime.now()
-    main(2021, 2021)
+    main(2000, 2000)
     LOGGER.info(f'Total time taken: {datetime.datetime.now() - start_all}')

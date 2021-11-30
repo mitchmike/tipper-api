@@ -23,21 +23,18 @@ def main(from_year, to_year, from_round, to_round):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Scrape AFL data")
-    options = {
-        'from_year': 2000,
-        'to_year': datetime.datetime.now().year,
-        'from_round': 1,
-        'to_round': 30
-    }
-    parser.add_argument('--from_year', help='scrape data from this year onwards', type=int, choices=range(1990, datetime.datetime.now().year + 1), default=options['from_year'])
-    parser.add_argument('--to_year', help='scrape data up until this year (inclusive)', type=int, choices=range(1990, datetime.datetime.now().year + 1), default=options['to_year'])
-    parser.add_argument('--from_round', help='scrape data from this round onwards', type=int, choices=range(1, 30), default=options['from_round'])
-    parser.add_argument('--to_round', help='scrape data up until this round (inclusive)', type=int, choices=range(1, 30), default=options['to_round'])
-
+    parser.add_argument('--from_year', help='scrape data from this year onwards',
+                        type=int, choices=range(1990, datetime.datetime.now().year + 1), default=2000)
+    parser.add_argument('--to_year', help='scrape data up until this year (inclusive)',
+                        type=int, choices=range(1990, datetime.datetime.now().year + 1), default=datetime.datetime.now().year)
+    parser.add_argument('--from_round', help='scrape data from this round onwards',
+                        type=int, choices=range(1, 30), default=1)
+    parser.add_argument('--to_round', help='scrape data up until this round (inclusive)',
+                        type=int, choices=range(1, 30), default=30)
     parser.add_argument('-l', '--latest', help='scrape the latest data only', action="store_true")
     args = parser.parse_args()
     if args.latest:
-        print("\"Latest\" flag provided: Ignoring any from/to arguments and scraping for the latest rounds")
+        LOGGER.info("\"Latest\" flag provided: Ignoring any from/to arguments and scraping for the latest rounds")
         args.from_year = datetime.datetime.now().year
         args.to_year = datetime.datetime.now().year
         args.from_round = find_latest_round(CALENDAR_DICT, datetime.datetime.now())
