@@ -4,11 +4,11 @@ import bs4
 import os
 
 from sqlalchemy import select
-from scrapers import gameScrape
+from datascrape.scrapers import gameScrape
 from model import base
 from model import Game
-from test import get_html
-from test.scrapertest.BaseScraperTest import BaseScraperTest
+from datascrape.test import get_html
+from datascrape.test.scrapertest.BaseScraperTest import BaseScraperTest
 
 
 class TestGameScrape(BaseScraperTest):

@@ -3,13 +3,13 @@ import datetime
 import bs4
 import os
 
-from scrapers import injuryScrape
+from datascrape.scrapers import injuryScrape
 from model import base
 from model import Player
 from model.injury import Injury
-from scrapers.injuryScrape import TEAMS
-from test import get_html
-from test.scrapertest.BaseScraperTest import BaseScraperTest
+from datascrape.scrapers.injuryScrape import TEAMS
+from datascrape.test import get_html
+from datascrape.test.scrapertest.BaseScraperTest import BaseScraperTest
 
 
 class TestInjuryScrape(BaseScraperTest):

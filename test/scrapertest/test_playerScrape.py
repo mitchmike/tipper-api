@@ -6,11 +6,11 @@ import os
 import copy
 
 from sqlalchemy import select
-from scrapers import playerScrape
+from datascrape.scrapers import playerScrape
 from model import base
 from model import Player
-from test import get_html
-from test.scrapertest.BaseScraperTest import BaseScraperTest
+from datascrape.test import get_html
+from datascrape.test.scrapertest.BaseScraperTest import BaseScraperTest
 
 
 class TestPlayerScrape(BaseScraperTest):

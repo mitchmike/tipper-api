@@ -11,7 +11,7 @@ import datetime
 import re
 import os
 
-from logging_config import LOGGING_CONFIG
+from datascrape.logging_config import LOGGING_CONFIG
 from model.base import Base
 from model.player import Player
 from model.player_fantasy import PlayerFantasy

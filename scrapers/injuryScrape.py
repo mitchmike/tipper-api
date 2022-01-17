@@ -8,7 +8,7 @@ from sqlalchemy import select
 
 import datetime
 
-from logging_config import LOGGING_CONFIG
+from datascrape.logging_config import LOGGING_CONFIG
 from model.base import Base
 from model.player import Player
 from model.injury import Injury

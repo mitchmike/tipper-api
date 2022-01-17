@@ -1,6 +1,6 @@
 from unittest import TestCase
 from datetime import datetime
-from util.latest_round import find_latest_round
+from datascrape.util.latest_round import find_latest_round
 
 
 class TestLatestRound(TestCase):

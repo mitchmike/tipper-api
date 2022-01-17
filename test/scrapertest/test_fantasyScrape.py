@@ -3,12 +3,12 @@ import bs4
 import os
 import copy
 
-from scrapers import fantasyScrape
+from datascrape.scrapers import fantasyScrape
 from model import base
 from model import Player
 from model.player_fantasy import PlayerFantasy
-from test import get_html
-from test.scrapertest.BaseScraperTest import BaseScraperTest
+from datascrape.test import get_html
+from datascrape.test.scrapertest.BaseScraperTest import BaseScraperTest
 
 
 class TestFantasyScrape(BaseScraperTest):

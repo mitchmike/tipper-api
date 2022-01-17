@@ -1,6 +1,6 @@
 from datetime import datetime
 import logging.config
-from logging_config import LOGGING_CONFIG
+from datascrape.logging_config import LOGGING_CONFIG
 
 logging.config.dictConfig(LOGGING_CONFIG)
 LOGGER = logging.getLogger(__name__)

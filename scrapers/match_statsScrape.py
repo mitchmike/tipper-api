@@ -9,8 +9,8 @@ import queue
 import logging.config
 from threading import Thread
 
-from logging_config import LOGGING_CONFIG
-from util.MilestoneRecorder import MileStoneRecorder
+from datascrape.logging_config import LOGGING_CONFIG
+from datascrape.util.MilestoneRecorder import MileStoneRecorder
 from model.base import Base
 from model.player import Player
 from model.game import Game

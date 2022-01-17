@@ -1,7 +1,7 @@
 import os
-from test import get_html
-from test.scrapertest.BaseScraperTest import BaseScraperTest, TEST_DB_CONN_STRING
-from scrapers.match_statsScrape import *
+from datascrape.test import get_html
+from datascrape.test.scrapertest.BaseScraperTest import BaseScraperTest, TEST_DB_CONN_STRING
+from datascrape.scrapers.match_statsScrape import *
 
 
 class TestMatchStatsScrape(BaseScraperTest):

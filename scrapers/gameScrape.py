@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy import select
 import datetime
 
-from logging_config import LOGGING_CONFIG
+from datascrape.logging_config import LOGGING_CONFIG
 from model.base import Base
 from model.game import Game
 
