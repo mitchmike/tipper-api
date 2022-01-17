@@ -8,8 +8,8 @@ import datetime
 import re
 
 from logging_config import LOGGING_CONFIG
-from repositories.base import Base
-from repositories.player import Player
+from model.base import Base
+from model.player import Player
 
 logging.config.dictConfig(LOGGING_CONFIG)
 LOGGER = logging.getLogger(__name__)

@@ -5,8 +5,8 @@ import os
 
 from sqlalchemy import select
 from scrapers import gameScrape
-from repositories import base
-from repositories import Game
+from model import base
+from model import Game
 from test import get_html
 from test.scrapertest.BaseScraperTest import BaseScraperTest
 

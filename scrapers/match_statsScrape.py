@@ -11,11 +11,11 @@ from threading import Thread
 
 from logging_config import LOGGING_CONFIG
 from util.MilestoneRecorder import MileStoneRecorder
-from repositories.base import Base
-from repositories.player import Player
-from repositories.game import Game
-from repositories.milestone import Milestone
-from repositories.match_stats_player import MatchStatsPlayer
+from model.base import Base
+from model.player import Player
+from model.game import Game
+from model.milestone import Milestone
+from model.match_stats_player import MatchStatsPlayer
 
 logging.config.dictConfig(LOGGING_CONFIG)
 LOGGER = logging.getLogger(__name__)

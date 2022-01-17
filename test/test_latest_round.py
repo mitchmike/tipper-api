@@ -12,19 +12,19 @@ class TestLatestRound(TestCase):
     }
 
     def test_current_date_before_calendar_start(self):
-        current_date = datetime.strptime('March 17' + str(2021), '%B %d%Y')
+        current_date = datetime.strptime('March 17' + str(datetime.now().year), '%B %d%Y')
         self.runTest(current_date, 0)
 
     def test_current_date_after_calendar_end(self):
-        current_date = datetime.strptime('April 9' + str(2021), '%B %d%Y')
+        current_date = datetime.strptime('April 9' + str(datetime.now().year), '%B %d%Y')
         self.runTest(current_date, 4)
 
     def test_current_date_on_specific_calendar_date(self):
-        current_date = datetime.strptime('March 25' + str(2021), '%B %d%Y')
+        current_date = datetime.strptime('March 25' + str(datetime.now().year), '%B %d%Y')
         self.runTest(current_date, 1)
 
     def test_current_date_between_calendar_dates(self):
-        current_date = datetime.strptime('March 26' + str(2021), '%B %d%Y')
+        current_date = datetime.strptime('March 26' + str(datetime.now().year), '%B %d%Y')
         self.runTest(current_date, 2)
 
     def runTest(self, current_date, expected_round):

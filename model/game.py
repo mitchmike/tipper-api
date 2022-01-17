@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.orm import relationship
-from repositories.base import Base
+from model.base import Base
 
 
 class Game(Base):

@@ -9,9 +9,9 @@ from sqlalchemy import select
 import datetime
 
 from logging_config import LOGGING_CONFIG
-from repositories.base import Base
-from repositories.player import Player
-from repositories.injury import Injury
+from model.base import Base
+from model.player import Player
+from model.injury import Injury
 
 logging.config.dictConfig(LOGGING_CONFIG)
 LOGGER = logging.getLogger(__name__)

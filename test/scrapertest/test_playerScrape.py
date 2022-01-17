@@ -7,8 +7,8 @@ import copy
 
 from sqlalchemy import select
 from scrapers import playerScrape
-from repositories import base
-from repositories import Player
+from model import base
+from model import Player
 from test import get_html
 from test.scrapertest.BaseScraperTest import BaseScraperTest
 

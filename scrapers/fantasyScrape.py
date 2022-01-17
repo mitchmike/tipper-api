@@ -12,10 +12,10 @@ import re
 import os
 
 from logging_config import LOGGING_CONFIG
-from repositories.base import Base
-from repositories.player import Player
-from repositories.player_fantasy import PlayerFantasy
-from repositories.player_supercoach import PlayerSupercoach
+from model.base import Base
+from model.player import Player
+from model.player_fantasy import PlayerFantasy
+from model.player_supercoach import PlayerSupercoach
 
 logging.config.dictConfig(LOGGING_CONFIG)
 LOGGER = logging.getLogger(__name__)

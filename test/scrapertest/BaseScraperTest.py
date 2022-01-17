@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from repositories import base
+from model import base
 
 TEST_DB_CONN_STRING = 'postgresql://postgres:oscar12!@localhost:5432/tiplos-test?gssencmode=disable'
 

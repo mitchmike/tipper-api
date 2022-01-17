@@ -4,9 +4,9 @@ import os
 import copy
 
 from scrapers import fantasyScrape
-from repositories import base
-from repositories import Player
-from repositories.player_fantasy import PlayerFantasy
+from model import base
+from model import Player
+from model.player_fantasy import PlayerFantasy
 from test import get_html
 from test.scrapertest.BaseScraperTest import BaseScraperTest
 

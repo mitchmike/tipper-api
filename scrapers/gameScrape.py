@@ -8,8 +8,8 @@ from sqlalchemy import select
 import datetime
 
 from logging_config import LOGGING_CONFIG
-from repositories.base import Base
-from repositories.game import Game
+from model.base import Base
+from model.game import Game
 
 logging.config.dictConfig(LOGGING_CONFIG)
 LOGGER = logging.getLogger(__name__)

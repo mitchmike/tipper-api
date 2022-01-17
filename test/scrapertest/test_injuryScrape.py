@@ -4,9 +4,9 @@ import bs4
 import os
 
 from scrapers import injuryScrape
-from repositories import base
-from repositories import Player
-from repositories.injury import Injury
+from model import base
+from model import Player
+from model.injury import Injury
 from scrapers.injuryScrape import TEAMS
 from test import get_html
 from test.scrapertest.BaseScraperTest import BaseScraperTest

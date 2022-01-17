@@ -1,7 +1,7 @@
 import datetime
 
 from sqlalchemy import Column, Integer, String, DateTime, BigInteger, Sequence
-from repositories.base import Base
+from model.base import Base
 
 
 class Milestone(Base):
