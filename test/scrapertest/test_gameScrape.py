@@ -77,12 +77,12 @@ class TestGameScrape(BaseScraperTest):
         self.one_row_soup = bs4.BeautifulSoup(self.HTML_ONE_ROW, 'html.parser')
         self.ONE_GAME_ROW = ['Thu 21 Mar 7:25pm', ['carlton-blues', 'richmond-tigers'], 'MCG', '85016', ['9721', '64', '97'],
                         'P. Cripps 32', 'T. Lynch 3\nT. Nankervis 3\nJ. Higgins 3']
-        self.game = gameScrape.populate_game(self.ONE_GAME_ROW, self.headers, self.YEAR, 1)
+        self.game = gameScrape._populate_game(self.ONE_GAME_ROW, self.headers, self.YEAR, 1)
         # all rows test data
-        self.games = gameScrape.process_row(self.first_row, self.headers, [], self.YEAR, 1)
+        self.games = gameScrape._process_row(self.first_row, self.headers, [], self.YEAR, 1)
 
     def test_process_row(self):
-        one_game = gameScrape.process_row(self.one_row_soup, self.headers, [], self.YEAR, 1)
+        one_game = gameScrape._process_row(self.one_row_soup, self.headers, [], self.YEAR, 1)
         self.assertIsNotNone(one_game)
         self.assertEqual(one_game[0].id, 9721)
         self.assertEqual(one_game[0].home_team, 'carlton-blues')
@@ -97,7 +97,7 @@ class TestGameScrape(BaseScraperTest):
         self.assertEqual(one_game[0].round_number, 1)
 
     def test_process_row_multiple(self):
-        games = gameScrape.process_row(self.first_row, self.headers, [], self.YEAR, 1)
+        games = gameScrape._process_row(self.first_row, self.headers, [], self.YEAR, 1)
         self.assertIsNotNone(games)
         self.assertEqual(len(games), 207)
         self.assertEqual(games[0].id, 9721)
@@ -106,13 +106,13 @@ class TestGameScrape(BaseScraperTest):
     def test_process_row_finals_round(self):
         finals_soup = bs4.BeautifulSoup(self.HTML_FINALS_ROW, 'html.parser')  # contains grand-final row header
         finals_first_row = finals_soup.select('tr')[0]
-        finals_games = gameScrape.process_row(finals_first_row, self.headers, [], self.YEAR, 1)
+        finals_games = gameScrape._process_row(finals_first_row, self.headers, [], self.YEAR, 1)
         self.assertIsNotNone(finals_games)
         self.assertEqual(finals_games[0].round_number, 54)  # round for grand-final
 
     def test_scrape_game(self):
         row = self.one_row_soup.find('tr')
-        game_row = gameScrape.scrape_game(row)
+        game_row = gameScrape._scrape_one_game(row)
         self.assertEqual(len(game_row), 7)
         self.assertEqual(game_row[0], 'Thu 21 Mar 7:25pm')
         self.assertEqual(game_row[1][0], 'carlton-blues')
@@ -126,7 +126,7 @@ class TestGameScrape(BaseScraperTest):
     def test_scrape_game_missing_data(self):
         row = self.one_row_soup.find('tr')
         row.find_all('td')[3].string = ''
-        game_row = gameScrape.scrape_game(row)
+        game_row = gameScrape._scrape_one_game(row)
         self.assertEqual(len(game_row), 7)
         self.assertEqual(game_row[0], 'Thu 21 Mar 7:25pm')
         self.assertEqual(game_row[1][0], 'carlton-blues')
@@ -141,7 +141,7 @@ class TestGameScrape(BaseScraperTest):
         row = self.one_row_soup.find('tr')
         td_to_change = row.find_all('td')[1]
         td_to_change.find_all('a')[1].decompose() # remove one a tag from this td
-        game_row = gameScrape.scrape_game(row)
+        game_row = gameScrape._scrape_one_game(row)
         self.assertEqual(len(game_row), 7)
         self.assertEqual(game_row[0], 'Thu 21 Mar 7:25pm')
         self.assertEqual(game_row[1], 'Carlton\n                v')
@@ -150,12 +150,12 @@ class TestGameScrape(BaseScraperTest):
         self.assertEqual(game_row[4][0], '9721')
         self.assertEqual(game_row[4][1], '64')
         self.assertEqual(game_row[4][2], '97')
-        game = gameScrape.populate_game(game_row, self.headers, self.YEAR, 1)
+        game = gameScrape._populate_game(game_row, self.headers, self.YEAR, 1)
         self.assertIsNone(game.home_team)
         self.assertIsNone(game.away_team)
 
     def test_populate_game(self):
-        game = gameScrape.populate_game(self.ONE_GAME_ROW, self.headers, self.YEAR, 1)
+        game = gameScrape._populate_game(self.ONE_GAME_ROW, self.headers, self.YEAR, 1)
         self.assertEqual(game.id, 9721)
         self.assertEqual(game.home_team, 'carlton-blues')
         self.assertEqual(game.away_team, 'richmond-tigers')
@@ -172,7 +172,7 @@ class TestGameScrape(BaseScraperTest):
         # set scores as equal
         self.ONE_GAME_ROW[4][1] = '70'
         self.ONE_GAME_ROW[4][2] = '70'
-        game = gameScrape.populate_game(self.ONE_GAME_ROW, self.headers, self.YEAR, 1)
+        game = gameScrape._populate_game(self.ONE_GAME_ROW, self.headers, self.YEAR, 1)
         self.assertEqual(game.home_team, 'carlton-blues')
         self.assertEqual(game.away_team, 'richmond-tigers')
         self.assertEqual(game.home_score, 70)
@@ -181,16 +181,16 @@ class TestGameScrape(BaseScraperTest):
 
     def test_populate_game_BYE(self):
         game_row = ['', 'Western Bulldogs', 'BYE', '', '', '', '']
-        game = gameScrape.populate_game(game_row, self.headers, self.YEAR, 1)
+        game = gameScrape._populate_game(game_row, self.headers, self.YEAR, 1)
         self.assertIsNone(game)
 
     def test_populate_game_no_result(self):
         game_row = ['Sun 18 Jul 12:35pm', ['kangaroos', 'essendon-bombers'], 'Metricon Stadium', '', '', '', '']
-        game = gameScrape.populate_game(game_row, self.headers, self.YEAR, 1)
+        game = gameScrape._populate_game(game_row, self.headers, self.YEAR, 1)
         self.assertIsNone(game)
 
     def test_upsert_game_new(self):
-        gameScrape.upsert_games([self.game], TestGameScrape._engine)
+        gameScrape._upsert_games([self.game], TestGameScrape._engine)
         with TestGameScrape.Session() as session:
             game_in_db = session.execute(select(Game).filter_by(id=self.game.id)).first()
             self.assertIsNotNone(game_in_db[0])
@@ -213,7 +213,7 @@ class TestGameScrape(BaseScraperTest):
             game_copy.venue = 'the moon'  # to be overridden when game is added again
             test_session.add(game_copy)
             test_session.commit()
-        gameScrape.upsert_games([self.game], TestGameScrape._engine)
+        gameScrape._upsert_games([self.game], TestGameScrape._engine)
         with TestGameScrape.Session() as session:
             game_in_db = session.execute(select(Game).filter_by(id=self.game.id)).first()
             self.assertIsNotNone(game_in_db[0])
@@ -231,7 +231,7 @@ class TestGameScrape(BaseScraperTest):
 
     def test_upsert_game_no_id(self):
         self.game.id = None
-        gameScrape.upsert_games([self.game], TestGameScrape._engine)
+        gameScrape._upsert_games([self.game], TestGameScrape._engine)
         with TestGameScrape.Session() as session:
             game_in_db = session.execute(select(Game).filter_by(id=self.game.id)).first()
             self.assertIsNone(game_in_db)
@@ -239,20 +239,20 @@ class TestGameScrape(BaseScraperTest):
     def test_upsert_game_no_home_away_team(self):
         # home team
         self.game.home_team = None
-        gameScrape.upsert_games([self.game], TestGameScrape._engine)
+        gameScrape._upsert_games([self.game], TestGameScrape._engine)
         with TestGameScrape.Session() as session:
             game_in_db = session.execute(select(Game).filter_by(id=self.game.id)).first()
             self.assertIsNone(game_in_db)
         # away team
         self.game.home_team = 'carlton-blues'
         self.game.away_team = None
-        gameScrape.upsert_games([self.game], TestGameScrape._engine)
+        gameScrape._upsert_games([self.game], TestGameScrape._engine)
         with TestGameScrape.Session() as session:
             game_in_db = session.execute(select(Game).filter_by(id=self.game.id)).first()
             self.assertIsNone(game_in_db)
 
     def test_upsert_games_full_year(self):
-        gameScrape.upsert_games(self.games, TestGameScrape._engine)
+        gameScrape._upsert_games(self.games, TestGameScrape._engine)
         with TestGameScrape.Session() as session:
             games_in_db = session.execute(select(Game).filter_by(year=self.YEAR)).all()
             self.assertEqual(len(games_in_db), 207)

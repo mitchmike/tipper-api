@@ -15,7 +15,7 @@ def main(from_year, to_year, from_round, to_round):
     LOGGER.info("Starting Full DataScrape")
     playerScrape.main()
     injuryScrape.main()
-    gameScrape.main(from_year, to_year)
+    gameScrape.scrape_games(from_year, to_year)
     fantasyScrape.main(from_year, to_year, from_round, to_round)
     match_statsScrape.main(from_year, to_year, from_round, to_round)
     LOGGER.info("Finished Full DataScrape")
@@ -24,7 +24,7 @@ def main(from_year, to_year, from_round, to_round):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Scrape AFL data")
     parser.add_argument('--from_year', help='scrape data from this year onwards',
-                        type=int, choices=range(1990, datetime.datetime.now().year + 1), default=2000)
+                        type=int, choices=range(1990, datetime.datetime.now().year + 1), default=2021)
     parser.add_argument('--to_year', help='scrape data up until this year (inclusive)',
                         type=int, choices=range(1990, datetime.datetime.now().year + 1), default=datetime.datetime.now().year)
     parser.add_argument('--from_round', help='scrape data from this round onwards',

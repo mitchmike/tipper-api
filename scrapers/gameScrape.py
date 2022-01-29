@@ -23,11 +23,11 @@ FINAL_ROUNDS = {
 }
 
 
-def main(from_year, to_year):
+def scrape_games(from_year, to_year):
     LOGGER.info("Starting GAME SCRAPE")
     engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
     Base.metadata.create_all(engine, checkfirst=True)
-
+    games = []
     for year in range(from_year, to_year + 1):
         start = datetime.datetime.now()
         LOGGER.info(f'Processing games from footywire for year: {year}')
@@ -39,17 +39,18 @@ def main(from_year, to_year):
         # Mapping of field names in html table in index order
         headers = [x.text.split('\n')[0].strip() for x in first_row.findPrevious('tr').find_all(['td', 'th'])]
         # recursive function to continue through rows until they no longer have data children
-        games = process_row(first_row, headers, [], year, 1)
-        upsert_games(games, engine)
+        games = _process_row(first_row, headers, games, year, 1)
+        _upsert_games(games, engine)
         LOGGER.info(f'Time taken: {datetime.datetime.now() - start}')
     LOGGER.info("Finished GAME SCRAPE")
+    return f'Scraped {len(games)} games'
 
 
-def process_row(row, headers, games, year, round_number):
+def _process_row(row, headers, games, year, round_number):
     if len(row.select('.data')):  # data row
         try:
-            game_row = scrape_game(row)
-            game = populate_game(game_row, headers, year, round_number)
+            game_row = _scrape_one_game(row)
+            game = _populate_game(game_row, headers, year, round_number)
         except ValueError as e:
             LOGGER.exception(f'Exception processing row: {game_row}: {e}')
             game = None
@@ -66,11 +67,11 @@ def process_row(row, headers, games, year, round_number):
             round_number = int(row.select('.tbtitle')[0].text.strip().split()[1])
     next_row = row.findNext('tr')
     if next_row:
-        process_row(next_row, headers, games, year, round_number)
+        _process_row(next_row, headers, games, year, round_number)
     return games
 
 
-def scrape_game(row):
+def _scrape_one_game(row):
     game_row = []
     for td in row.find_all('td'):
         links = td.find_all('a')
@@ -95,7 +96,7 @@ def scrape_game(row):
     return game_row
 
 
-def populate_game(game_row, headers, year, round_number):
+def _populate_game(game_row, headers, year, round_number):
     game = Game(None, None, None, year, round_number)
     game.updated_at = datetime.datetime.now()
     for i in range(len(game_row)):
@@ -142,7 +143,7 @@ def populate_game(game_row, headers, year, round_number):
     return game
 
 
-def upsert_games(games, engine):
+def _upsert_games(games, engine):
     LOGGER.info(f'Upserting {len(games)} game(s) to the database')
     session = sessionmaker(bind=engine)
     with session() as session:
@@ -164,5 +165,5 @@ def upsert_games(games, engine):
 
 if __name__ == '__main__':
     start_all = datetime.datetime.now()
-    main(2000, 2000)
+    scrape_games(2000, 2000)
     LOGGER.info(f'Total time taken: {datetime.datetime.now() - start_all}')
