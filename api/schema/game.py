@@ -1,5 +1,5 @@
-from marshmallow_sqlalchemy import SQLAlchemyAutoSchema, auto_field
-from api.model.game import Game
+from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
+from model.game import Game
 
 
 class GameSchema(SQLAlchemyAutoSchema):
