@@ -21,7 +21,7 @@ class TestMatchStatsScrape(BaseScraperTest):
         # Stub html file used - to refresh file run get_html.py with 'players' as first arg
         with open(self.HTML_SOURCE_FILE, 'r') as file:
             soup = bs4.BeautifulSoup(file.read(), 'lxml')
-        self.milestone_recorder = MileStoneRecorder(TEST_DB_CONN_STRING)
+        self.milestone_recorder = MileStoneRecorder(TestMatchStatsScrape._engine)
 
     def test_populate_request_queue(self):
         with TestMatchStatsScrape.Session() as add_games_for_test:
@@ -140,7 +140,7 @@ class TestMatchStatsScrape(BaseScraperTest):
             '<td class="statdata">120</td>\n'
             '</tr>')
         row = bs4.BeautifulSoup(row_string, 'lxml')
-        stats_row = scrape_stats(row)
+        stats_row = scrape_stats_one_row(row)
         self.assertEqual(stats_row, [['richmond-tigers', 'jack-graham'], '22', '11', '33', '5', '0', '1', '3', '0', '1',
                                      '11', '5', '4', '1', '2', '1', '115', '120'])
 

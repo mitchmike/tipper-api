@@ -1,3 +1,5 @@
+from os import getenv
+from dotenv import load_dotenv
 import logging.config
 
 import requests
@@ -45,9 +47,8 @@ TEAMS = {
 }
 
 
-def main():
+def scrape_injuries(engine):
     LOGGER.info("Starting INJURY SCRAPE")
-    engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
     Base.metadata.create_all(engine, checkfirst=True)
     res = requests.get(f'https://www.footywire.com/afl/footy/injury_list')
     soup = bs4.BeautifulSoup(res.text, 'html.parser')
@@ -69,7 +70,6 @@ def main():
     # persist all injuries in one go
     upsert_injuries(injuries, engine)
     LOGGER.info("Finished INJURY SCRAPE")
-
 
 
 def scrape_rows(team_table):
@@ -130,4 +130,6 @@ def upsert_injuries(injury_list, engine):
 
 
 if __name__ == '__main__':
-    main()
+    load_dotenv()
+    db_engine = create_engine(getenv('DATABASE_URL'))
+    scrape_injuries(db_engine)

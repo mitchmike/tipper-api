@@ -46,7 +46,7 @@ class TestPlayerScrape(BaseScraperTest):
         self.first_row = data[0].parent
         self.last_row = data[-1].parent
         self.headers = [x.text for x in self.first_row.findPrevious('tr').find_all('a')]
-        self.player_row = playerScrape.scrape_player(self.first_row)
+        self.player_row = playerScrape.scrape_one_player(self.first_row)
         self.player = playerScrape.populate_player(self.player_row, self.headers, self.TEAM)
 
     def test_process_row(self):
@@ -78,7 +78,7 @@ class TestPlayerScrape(BaseScraperTest):
     def test_scrape_player(self):
         one_row_soup = bs4.BeautifulSoup(self.HTML_ONE_ROW, 'html.parser')
         row = one_row_soup.find('tr')
-        player_row = playerScrape.scrape_player(row)
+        player_row = playerScrape.scrape_one_player(row)
         self.assertEqual(len(player_row), 9)
         self.assertEqual(player_row[0], '16')
         self.assertEqual(player_row[1], 'jake-aarts')

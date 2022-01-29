@@ -1,6 +1,9 @@
 import datetime
 import logging.config
 import argparse
+from os import getenv
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
 
 from datascrape.scrapers import *
 from datascrape.util.latest_round import CALENDAR_DICT
@@ -11,13 +14,13 @@ logging.config.dictConfig(LOGGING_CONFIG)
 LOGGER = logging.getLogger(__name__)
 
 
-def main(from_year, to_year, from_round, to_round):
+def run_full_scrape(from_year, to_year, from_round, to_round, engine):
     LOGGER.info("Starting Full DataScrape")
-    playerScrape.main()
-    injuryScrape.main()
-    gameScrape.scrape_games(from_year, to_year)
-    fantasyScrape.main(from_year, to_year, from_round, to_round)
-    match_statsScrape.main(from_year, to_year, from_round, to_round)
+    playerScrape.scrape_players(engine)
+    injuryScrape.scrape_injuries(engine)
+    gameScrape.scrape_games(engine, from_year, to_year)
+    fantasyScrape.scrape_fantasies(engine, from_year, to_year, from_round, to_round)
+    match_statsScrape.scrape_match_stats(engine, from_year, to_year, from_round, to_round)
     LOGGER.info("Finished Full DataScrape")
 
 
@@ -39,5 +42,7 @@ if __name__ == '__main__':
         args.to_year = datetime.datetime.now().year
         args.from_round = find_latest_round(CALENDAR_DICT, datetime.datetime.now())
         args.to_round = args.from_round
-
-    main(from_year=args.from_year, to_year=args.to_year, from_round=args.from_round, to_round=args.to_round)
+    load_dotenv()
+    db_engine = create_engine(getenv('DATABASE_URL'))
+    run_full_scrape(from_year=args.from_year, to_year=args.to_year, from_round=args.from_round, to_round=args.to_round,
+                    engine=db_engine)

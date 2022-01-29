@@ -4,8 +4,7 @@ from sqlalchemy import create_engine
 
 class MileStoneRecorder:
 
-    def __init__(self, db_connection_string):
-        engine = create_engine(db_connection_string)
+    def __init__(self, engine):
         session = sessionmaker(bind=engine)
         self.milestone_session = session()
 

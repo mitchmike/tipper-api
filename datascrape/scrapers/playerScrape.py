@@ -1,3 +1,5 @@
+from os import getenv
+from dotenv import load_dotenv
 import logging.config
 import requests
 import bs4
@@ -48,9 +50,8 @@ PLAYER_HEADER_MAP = {
 }
 
 
-def main():
+def scrape_players(engine):
     LOGGER.info("Starting PLAYER SCRAPE")
-    engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
     Base.metadata.create_all(engine, checkfirst=True)
     for team in TEAMS:
         LOGGER.info(f'Processing players for {team}...')
@@ -70,7 +71,7 @@ def main():
 
 def process_row(row, headers, team, players):
     try:
-        player_row = scrape_player(row)
+        player_row = scrape_one_player(row)
         player = populate_player(player_row, headers, team)
     except ValueError as e:
         LOGGER.error(f'Exception processing row: {player_row}: {e}')
@@ -83,7 +84,7 @@ def process_row(row, headers, team, players):
     return players
 
 
-def scrape_player(row):
+def scrape_one_player(row):
     player_row = []
     for td in row.find_all('td'):
         [x.decompose() for x in td.select('.playerflag')]
@@ -150,4 +151,6 @@ def upsert_team(team, players, engine):
 
 
 if __name__ == '__main__':
-    main()
+    load_dotenv()
+    db_engine = create_engine(getenv('DATABASE_URL'))
+    scrape_players(db_engine)

@@ -1,6 +1,8 @@
-import logging.config
+from os import getenv
+from dotenv import load_dotenv
 import requests
 import bs4
+import logging.config
 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
@@ -23,9 +25,8 @@ FINAL_ROUNDS = {
 }
 
 
-def scrape_games(from_year, to_year):
+def scrape_games(engine, from_year, to_year):
     LOGGER.info("Starting GAME SCRAPE")
-    engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
     Base.metadata.create_all(engine, checkfirst=True)
     games = []
     for year in range(from_year, to_year + 1):
@@ -165,5 +166,7 @@ def _upsert_games(games, engine):
 
 if __name__ == '__main__':
     start_all = datetime.datetime.now()
-    scrape_games(2000, 2000)
+    load_dotenv()
+    db_engine = create_engine(getenv('DATABASE_URL'))
+    scrape_games(db_engine, 2021, 2021)
     LOGGER.info(f'Total time taken: {datetime.datetime.now() - start_all}')

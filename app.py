@@ -36,7 +36,7 @@ def select_games():
 
 @app.route("/scrape_games")
 def trigger_scrape_games():
-    return gameScrape.scrape_games(2021, 2021)
+    return gameScrape.scrape_games(engine, 2021, 2021)
 
 
 if __name__ == '__main__':

@@ -1,3 +1,5 @@
+from os import getenv
+from dotenv import load_dotenv
 import threading
 import requests
 import bs4
@@ -23,11 +25,9 @@ LOGGER = logging.getLogger(__name__)
 run_id = round(datetime.datetime.now().timestamp() * 1000)
 
 
-def main(from_year, to_year, from_round, to_round):
+def scrape_match_stats(engine, from_year, to_year, from_round, to_round):
     LOGGER.info("Starting MATCH STATS SCRAPE")
-    db_connection_string = 'postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable'
-    engine = create_engine(db_connection_string)
-    milestone_recorder = MileStoneRecorder(db_connection_string)
+    milestone_recorder = MileStoneRecorder(engine)
     start = datetime.datetime.now()
     Base.metadata.create_all(engine, checkfirst=True)
     request_q = populate_request_queue(from_year, to_year, from_round, to_round, engine)  # synchronously create list of urls
@@ -107,7 +107,7 @@ def process_response(res_obj, milestone_recorder, engine):
 
 def process_row(row, headers, match_stats_list, match_id, engine):
     try:
-        stats_row = scrape_stats(row)
+        stats_row = scrape_stats_one_row(row)
         match_stats_player = populate_stats(stats_row, headers, match_id, engine)
     except ValueError as e:
         LOGGER.exception(f'Exception processing row: {stats_row}: {e}')
@@ -120,7 +120,7 @@ def process_row(row, headers, match_stats_list, match_id, engine):
     return match_stats_list
 
 
-def scrape_stats(row):
+def scrape_stats_one_row(row):
     stats_row = []
     for td in row.find_all('td'):
         if td.find('a'):
@@ -249,4 +249,6 @@ def upsert_match_stats(match_id, match_stats_list, engine):
 
 
 if __name__ == '__main__':
-    main(2021, 2021, 1, 30)
+    load_dotenv()
+    db_engine = create_engine(getenv('DATABASE_URL'))
+    scrape_match_stats(db_engine, 2021, 2021, 1, 30)

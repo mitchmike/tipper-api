@@ -1,3 +1,5 @@
+from os import getenv
+from dotenv import load_dotenv
 import logging.config
 
 import requests
@@ -21,9 +23,8 @@ logging.config.dictConfig(LOGGING_CONFIG)
 LOGGER = logging.getLogger(__name__)
 
 
-def main(from_year, to_year, from_round, to_round):
+def scrape_fantasies(engine, from_year, to_year, from_round, to_round):
     LOGGER.info("Starting FANTASY SCRAPE")
-    engine = create_engine('postgresql://postgres:oscar12!@localhost:5432/tiplos?gssencmode=disable')
     Base.metadata.create_all(engine, checkfirst=True)
     for year in range(from_year, to_year + 1):
         for mode in ['dream_team', 'supercoach']:
@@ -149,4 +150,6 @@ def insert_fantasies(mode, fantasies, fantasy_year, fantasy_round, engine):
 
 
 if __name__ == '__main__':
-    main(2021, 2021, 1, 30)
+    load_dotenv()
+    db_engine = create_engine(getenv('DATABASE_URL'))
+    scrape_fantasies(db_engine, 2021, 2021, 1, 30)
