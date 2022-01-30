@@ -1,1 +1,1 @@
-web: gunicorn tipper-api:tipper-api
+web: gunicorn tipper-api:app
