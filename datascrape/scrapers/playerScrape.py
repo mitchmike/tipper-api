@@ -53,6 +53,7 @@ PLAYER_HEADER_MAP = {
 def scrape_players(engine):
     LOGGER.info("Starting PLAYER SCRAPE")
     Base.metadata.create_all(engine, checkfirst=True)
+    return_string = ''
     for team in TEAMS:
         LOGGER.info(f'Processing players for {team}...')
         res = requests.get(f'https://www.footywire.com/afl/footy/tp-{team}')
@@ -66,7 +67,9 @@ def scrape_players(engine):
         players = process_row(first_row, headers, team, [])
         LOGGER.info(f'Found {len(players)} records for team: {team}. Upserting to database')
         upsert_team(team, players, engine)
+        return_string = return_string + f'Scraped {len(players)} players for team: {team} <br/>'
     LOGGER.info("Finished PLAYER SCRAPE")
+    return return_string
 
 
 def process_row(row, headers, team, players):

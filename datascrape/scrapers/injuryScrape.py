@@ -70,6 +70,7 @@ def scrape_injuries(engine):
     # persist all injuries in one go
     upsert_injuries(injuries, engine)
     LOGGER.info("Finished INJURY SCRAPE")
+    return f'Scraped {len(injuries)} injuries'
 
 
 def scrape_rows(team_table):
