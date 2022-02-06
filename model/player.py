@@ -22,7 +22,7 @@ class Player(Base):
     fantasy_points = relationship("PlayerFantasy", back_populates="player")
     supercoach_points = relationship("PlayerSupercoach", back_populates="player")
     match_stats_player = relationship("MatchStatsPlayer", back_populates="player")
-    __table_args__ = (UniqueConstraint('name_key', 'DOB', 'team', name='uix_1'),)
+    __table_args__ = (UniqueConstraint('name_key', 'DOB', name='uix_1'),)
 
     def __init__(self, name_key, team, dob):
         self.name_key = name_key

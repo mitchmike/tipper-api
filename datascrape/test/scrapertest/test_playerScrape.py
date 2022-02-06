@@ -137,7 +137,7 @@ class TestPlayerScrape(BaseScraperTest):
 
     def test_upsert_team_new_player(self):
         players = [self.player]
-        playerScrape.upsert_team(self.TEAM, players, TestPlayerScrape._engine)
+        playerScrape.upsert_team(players, TestPlayerScrape._engine)
 
         with TestPlayerScrape.Session() as session:
             players_in_db = session.execute(select(Player).filter_by(team=self.TEAM)).all()
@@ -158,7 +158,7 @@ class TestPlayerScrape(BaseScraperTest):
             test_session.commit()
 
         players = [self.player]
-        playerScrape.upsert_team(self.TEAM, players, TestPlayerScrape._engine)
+        playerScrape.upsert_team(players, TestPlayerScrape._engine)
         with TestPlayerScrape.Session() as test_session2:
             players_in_db = test_session2.execute(select(Player).filter_by(team=self.TEAM)).all()
             self.assertEqual(len(players_in_db), 1)
@@ -174,7 +174,7 @@ class TestPlayerScrape(BaseScraperTest):
         invalid_player = players[17]
         invalid_player.name_key = ''
         # GIVEN we insert one bad row
-        playerScrape.upsert_team(self.TEAM, players, TestPlayerScrape._engine)
+        playerScrape.upsert_team(players, TestPlayerScrape._engine)
         with TestPlayerScrape.Session() as session:
             players_in_db = session.execute(select(Player).filter_by(team=self.TEAM)).all()
             # WHEN one row fails THEN other rows should not be affected
@@ -183,7 +183,7 @@ class TestPlayerScrape(BaseScraperTest):
     def test_upsert_team_no_DOB(self):
         invalid_player = self.player
         invalid_player.DOB = None
-        playerScrape.upsert_team(self.TEAM, [invalid_player], TestPlayerScrape._engine)
+        playerScrape.upsert_team([invalid_player], TestPlayerScrape._engine)
         with TestPlayerScrape.Session() as session:
             players_in_db = session.execute(select(Player).filter_by(team=self.TEAM)).all()
             self.assertEqual(0, len(players_in_db))
@@ -191,7 +191,7 @@ class TestPlayerScrape(BaseScraperTest):
     def test_upsert_team_no_team(self):
         invalid_player = self.player
         invalid_player.team = None
-        playerScrape.upsert_team(self.TEAM, [invalid_player], TestPlayerScrape._engine)
+        playerScrape.upsert_team([invalid_player], TestPlayerScrape._engine)
         with TestPlayerScrape.Session() as session:
             players_in_db = session.execute(select(Player).filter_by(team=self.TEAM)).all()
             self.assertEqual(0, len(players_in_db))
@@ -199,7 +199,7 @@ class TestPlayerScrape(BaseScraperTest):
     def test_upsert_team_full_team(self):
         players = playerScrape.process_row(self.first_row, self.headers, self.TEAM, [])
         self.assertEqual(len(players), 43)
-        playerScrape.upsert_team(self.TEAM, players, TestPlayerScrape._engine)
+        playerScrape.upsert_team(players, TestPlayerScrape._engine)
         with TestPlayerScrape.Session() as test_session:
             players_in_db = test_session.execute(select(Player).filter_by(team=self.TEAM)).all()
             self.assertEqual(len(players_in_db), 43)

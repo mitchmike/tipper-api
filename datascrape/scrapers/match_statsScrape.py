@@ -144,7 +144,7 @@ def populate_stats(stat_row, headers, match_id, engine):
             match_stats_player.player_name = value[1]
             match_stats_player.player_id = find_player_id(value[0], value[1], engine)
             if match_stats_player.player_id is None:
-                LOGGER.info(f'Player not in current season player list {value}. Adding without playerid.')
+                LOGGER.debug(f'Player not in current season player list {value}. Adding without playerid.')
         elif key == "K":
             match_stats_player.kicks = int(value)
         elif key == "HB":
@@ -235,7 +235,7 @@ def upsert_match_stats(match_id, match_stats_list, engine):
                                f'match_stats: {match_stats}')
                 continue
             db_matches = [x[0] for x in stats_from_db if match_stats.game_id == x[0].game_id and match_stats.player_name
-                          == x[0].player_name and match_stats.team == x[0].team]
+                          == x[0].player_name and match_stats.player_id == x[0].player_id]
             if len(db_matches) > 0:
                 # just add the id to our obj, then merge, then commit session
                 match_stats.id = db_matches[0].id

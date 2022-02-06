@@ -30,7 +30,7 @@ def scrape_fantasies(engine, from_year, to_year, from_round, to_round):
         for mode in ['dream_team', 'supercoach']:
             for round_number in range(from_round, to_round + 1):
                 LOGGER.info(f'Scraping {mode} points for year: {year} and round_number {round_number}')
-                url = f'https://www.footywire.com/afl/footy/{mode}_round?year={year}&round_number={round_number}&p=&s=T'
+                url = f'https://www.footywire.com/afl/footy/{mode}_round?year={year}&round={round_number}&p=&s=T'
                 res = requests.get(url)
                 soup = bs4.BeautifulSoup(res.text, 'html.parser')
                 try:
@@ -78,12 +78,10 @@ def scrape_rows(table):
                 if d.find('a'):
                     try:
                         href = d.find('a').attrs['href']
-                        if re.match('^th', href):
-                            fantasy_row.append('-'.join(href.split('?')[0].split('-')[1:]))
-                            continue
                         if re.match('^p[ru]', href):
                             fantasy_row.append(href.split('--')[1])
-                            continue
+                            fantasy_row.append('-'.join(href.split('--')[0].split('-')[1:]))
+                        continue
                     except KeyError:
                         LOGGER.warning(f'Cannot scrape cell due to missing href in link: {d}')
                 fantasy_row.append(d.text.strip().split('\n')[0])
@@ -109,10 +107,13 @@ def populate_fantasy(mode, fantasy_row, headers, fantasy_year, fantasy_round, en
         if key == 'player':
             with session() as session:
                 player = session.execute(select(Player).filter_by(team=team_name, name_key=value)).first()
-                if player:
-                    fantasy.player_id = player[0].id
-                else:
-                    LOGGER.warning(f'no player for {fantasy_row}, {value}')
+                if not player:
+                    # try just the player name
+                    player = session.execute(select(Player).filter_by(name_key=value)).first()
+                    if not player:
+                        LOGGER.debug(f'No player for {fantasy_row}, {value}')
+                        continue
+                fantasy.player_id = player[0].id
         elif key == 'rank':
             fantasy.round_ranking = value
         elif key == 'round_salary':
@@ -126,30 +127,35 @@ def populate_fantasy(mode, fantasy_row, headers, fantasy_year, fantasy_round, en
 
 def insert_fantasies(mode, fantasies, fantasy_year, fantasy_round, engine):
     session = sessionmaker(bind=engine)
-    with session() as session:
-        fantasies_persisted = session.execute(select(PlayerFantasy if mode == 'dream_team' else PlayerSupercoach)
+    with session() as commit_session:
+        fantasies_persisted = commit_session.execute(select(PlayerFantasy if mode == 'dream_team' else PlayerSupercoach)
                                           .filter_by(year=fantasy_year, round=fantasy_round)).all()
         LOGGER.info(f'{len(fantasies_persisted)} Records already found in DB for {fantasy_year}, round {fantasy_round}')
+        update_count = 0
+        new_count = 0
         for fantasy in fantasies:
             if fantasy.player_id is None:
-                LOGGER.warning(f'Record is missing details required for persistence (player_id). Doing nothing. Record: {fantasy}')
+                LOGGER.debug(f'Record is missing details required for persistence (player_id). Doing nothing. Record: {fantasy}')
                 continue
             db_match = [x[0] for x in fantasies_persisted
                         if fantasy.player_id == x[0].player_id
                         and fantasy.round == x[0].round
                         and fantasy.year == x[0].year]
             if db_match:
-                fantasy.id = db_match[0].id  # just add the id to our obj
-                continue  # do nothing
-            session.add(fantasy)  # add only if new
+                fantasy.id = db_match[0].id  # just add the id to our obj, then merge
+                update_count = update_count + 1
+            else:
+                new_count = new_count + 1
+            commit_session.merge(fantasy)
         try:
-            session.commit()
+            LOGGER.info(f'Persisting fantasy data to db. new: {new_count}, updated: {update_count}')
+            commit_session.commit()
         except Exception as e:
             LOGGER.exception(f'Could not commit fantasy: {fantasies} due to exception: {e} \n Rolling back')
-            session.rollback()
+            commit_session.rollback()
 
 
 if __name__ == '__main__':
     load_dotenv()
     db_engine = create_engine(getenv('DATABASE_URL'))
-    scrape_fantasies(db_engine, 2021, 2021, 1, 30)
+    scrape_fantasies(db_engine, 2021, 2021, 1, 26)

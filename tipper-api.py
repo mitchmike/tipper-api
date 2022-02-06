@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 
 from model.base import Base
 from model.game import Game
@@ -32,7 +32,17 @@ def index():
 def select_games():
     session = sessionmaker(bind=engine)
     with session() as session:
-        games = session.query(Game).all()
+        games = session.query(Game)
+        for key in request.args.keys():
+            if key == id:
+                games = session.query(Game).filter_by(id=request.args.get(key))
+            elif key == 'home_team':
+                games = games.filter_by(home_team=request.args.get(key))
+            elif key == 'away_team':
+                games = games.filter_by(away_team=request.args.get(key))
+            elif key == 'year':
+                games = games.filter_by(year=request.args.get(key))
+        games = games.all()
         games_schema = GameSchema(many=True)
         dump_data = games_schema.dump(games)
         return jsonify(dump_data)

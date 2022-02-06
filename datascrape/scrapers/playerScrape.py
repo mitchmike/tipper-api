@@ -66,7 +66,7 @@ def scrape_players(engine):
         # recursive function to continue through rows until they no longer have data children
         players = process_row(first_row, headers, team, [])
         LOGGER.info(f'Found {len(players)} records for team: {team}. Upserting to database')
-        upsert_team(team, players, engine)
+        upsert_team(players, engine)
         return_string = return_string + f'Scraped {len(players)} players for team: {team} <br/>'
     LOGGER.info("Finished PLAYER SCRAPE")
     return return_string
@@ -130,15 +130,14 @@ def populate_player(player_row, headers, team):
     return player
 
 
-def upsert_team(team, players, engine):
+def upsert_team(players, engine):
     session = sessionmaker(bind=engine)
     with session() as session:
-        players_from_db = session.execute(select(Player).filter_by(team=team)).all()
         for player in players:
             if player.name_key is None or player.team is None or player.DOB is None:
                 LOGGER.debug(f'Player is missing details required for persistance. doing nothing. Player: {player}')
                 continue
-            db_matches = [x[0] for x in players_from_db if player.name_key == x[0].name_key and player.DOB == x[0].DOB]
+            db_matches = session.query(Player).filter_by(name_key=player.name_key, DOB=player.DOB).all()
             if len(db_matches) > 0:
                 # just add the id to our obj, then merge, then commit session
                 player.id = db_matches[0].id
