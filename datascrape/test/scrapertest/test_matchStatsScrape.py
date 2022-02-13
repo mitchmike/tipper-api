@@ -94,7 +94,8 @@ class TestMatchStatsScrape(BaseScraperTest):
         row = bs4.BeautifulSoup(row_string, 'lxml')
         headers = ['Player', 'K', 'HB', 'D', 'M', 'G', 'B', 'T', 'HO', 'GA', 'I50', 'CL', 'CG', 'R50', 'FF', 'FA', 'AF', 'SC']
         match_id = 10_000
-        match_stats_list = process_row(row, headers, [], match_id, TestMatchStatsScrape._engine)
+        team = 'richmond-tigers'
+        match_stats_list = process_row(row, headers, [], team, match_id, TestMatchStatsScrape._engine)
         self.assertEqual(len(match_stats_list), 1)
         match_stats_player = match_stats_list[0]
         self.assertEqual(match_stats_player.game_id, 10_000)
@@ -141,7 +142,7 @@ class TestMatchStatsScrape(BaseScraperTest):
             '</tr>')
         row = bs4.BeautifulSoup(row_string, 'lxml')
         stats_row = scrape_stats_one_row(row)
-        self.assertEqual(stats_row, [['richmond-tigers', 'jack-graham'], '22', '11', '33', '5', '0', '1', '3', '0', '1',
+        self.assertEqual(stats_row, ['jack-graham', '22', '11', '33', '5', '0', '1', '3', '0', '1',
                                      '11', '5', '4', '1', '2', '1', '115', '120'])
 
     def test_populate_stats(self):
@@ -150,12 +151,13 @@ class TestMatchStatsScrape(BaseScraperTest):
         with TestMatchStatsScrape.Session() as session:
             session.add(player)
             session.commit()
-        stat_row = [['melbourne-demons', 'clayton-oliver'], '10', '25', '35', '6', '1', '2', '3', '4', '5', '3', '7',
+        stat_row = ['clayton-oliver', '10', '25', '35', '6', '1', '2', '3', '4', '5', '3', '7',
                     '5', '3', '0', '1', '107', '122']
+        team = 'melbourne-demons'
         headers = ['Player', 'K', 'HB', 'D', 'M', 'G', 'B', 'T', 'HO', 'GA', 'I50', 'CL', 'CG', 'R50', 'FF', 'FA', 'AF',
                    'SC']
         match_id = 10_000
-        match_stats_player = populate_stats(stat_row, headers, match_id,
+        match_stats_player = populate_stats(stat_row, headers, team, match_id,
                                             TestMatchStatsScrape._engine)
         self.assertEqual(match_stats_player.game_id, 10_000)
         self.assertEqual(match_stats_player.team, 'melbourne-demons')
@@ -178,14 +180,17 @@ class TestMatchStatsScrape(BaseScraperTest):
         self.assertEqual(match_stats_player.frees_against, 1)
 
     def test_find_player_id(self):
-        player = Player('michael-john', 'richmond', datetime.datetime.strptime('17 May 1993', '%d %b %Y').date())
+        player = Player('michael-jack', 'richmond', datetime.datetime.strptime('17 May 1993', '%d %b %Y').date())
         player.id = 12
         with TestMatchStatsScrape.Session() as session:
             session.add(player)
             session.commit()
-        player_id = find_player_id('richmond', 'michael-john',
+        player_id = find_player_id('richmond', 'michael-jack',
                                    TestMatchStatsScrape._engine)
         self.assertEqual(player_id, 12)
+        player_id_no_team = find_player_id('richWHAT', 'michael-jack',
+                                   TestMatchStatsScrape._engine)
+        self.assertEqual(player_id_no_team, 12)
         player_id_none = find_player_id('richmond', 'michael-jackson',
                                         TestMatchStatsScrape._engine)
         self.assertEqual(player_id_none, None)

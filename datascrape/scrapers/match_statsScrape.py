@@ -24,6 +24,26 @@ LOGGER = logging.getLogger(__name__)
 
 run_id = round(datetime.datetime.now().timestamp() * 1000)
 
+TEAM_HEADER_MAP = {
+    'adelaide-crows': 'adelaide',
+    'brisbane-lions': 'brisbane',
+    'carlton-blues': 'carlton',
+    'collingwood-magpies': 'collingwood',
+    'essendon-bombers': 'essendon',
+    'fremantle-dockers': 'fremantle',
+    'geelong-cats': 'geelong',
+    'gold-coast-suns': 'gold coast',
+    'greater-western-sydney-giants': 'gws',
+    'hawthorn-hawks': 'hawthorn',
+    'kangaroos': 'north melbourne',
+    'melbourne-demons': 'melbourne',
+    'port-adelaide-power': 'port adelaide',
+    'richmond-tigers': 'richmond',
+    'st-kilda-saints': 'st kilda',
+    'sydney-swans': 'sydney',
+    'west-coast-eagles': 'west coast',
+    'western-bulldogs': 'western bulldogs',
+}
 
 def scrape_match_stats(engine, from_year, to_year, from_round, to_round):
     LOGGER.info("Starting MATCH STATS SCRAPE")
@@ -92,23 +112,37 @@ def process_response(res_obj, milestone_recorder, engine):
     add_milestone(match_id, mode, f"match_start", milestone_recorder)
     LOGGER.info(f'Scraping match stats for year: {year}, round: {round_number}, match: {match_id}, url: {url}')
     soup = bs4.BeautifulSoup(res, 'lxml')
+    team_links = soup.select('#matchscoretable')[0].find_all('a')
+    teams = []
+    for i in [0,1]:
+        teams.append('-'.join(team_links[i].attrs['href'].split('-')[1:]))
     for i in [0, 1]:  # both teams on match stats page
         LOGGER.debug(f'Scraping for team: {"home" if i == 0 else "away"}')
-        data = soup.select('.tbtitle')[i].parent.parent.select('.statdata')
-        first_row = data[0].parent
+        team = teams[i]
+        stats_table_header = soup.select('.tbtitle')[i]
+        verify_team(stats_table_header, team)
+        first_row = stats_table_header.parent.parent.select('.statdata')[0].parent
         headers = [x.text for x in first_row.findPrevious('tr').find_all('td')]
         add_milestone(match_id, mode, f'process_row_start_{i}', milestone_recorder)
-        match_stats_list = process_row(first_row, headers, [], match_id, engine)
+        match_stats_list = process_row(first_row, headers, [], team, match_id, engine)
         add_milestone(match_id, mode, f'process_row_finish_{i}', milestone_recorder)
         upsert_match_stats(match_id, match_stats_list, engine)
         add_milestone(match_id, mode, f'persist_finish_{i}', milestone_recorder)
     add_milestone(match_id, mode, "match_finish", milestone_recorder)
 
 
-def process_row(row, headers, match_stats_list, match_id, engine):
+def verify_team(header, team):
+    expected_words = len(TEAM_HEADER_MAP[team].split())
+    header_team = ' '.join(header.text.strip().split()[0:0+expected_words]).lower()
+    if TEAM_HEADER_MAP[team] != header_team:
+        LOGGER.error(f'Team link does not match expected team name - '
+                     f'please check for data integrity issues. team from header: {header_team}, team_id: {team}')
+
+
+def process_row(row, headers, match_stats_list, team, match_id, engine):
     try:
         stats_row = scrape_stats_one_row(row)
-        match_stats_player = populate_stats(stats_row, headers, match_id, engine)
+        match_stats_player = populate_stats(stats_row, headers, team, match_id, engine)
     except ValueError as e:
         LOGGER.exception(f'Exception processing row: {stats_row}: {e}')
         match_stats_player = None
@@ -116,7 +150,7 @@ def process_row(row, headers, match_stats_list, match_id, engine):
         match_stats_list.append(match_stats_player)
     next_row = row.findNext('tr')
     if next_row is not None and len(next_row.select('.statdata')):
-        process_row(next_row, headers, match_stats_list, match_id, engine)
+        process_row(next_row, headers, match_stats_list, team, match_id, engine)
     return match_stats_list
 
 
@@ -124,15 +158,15 @@ def scrape_stats_one_row(row):
     stats_row = []
     for td in row.find_all('td'):
         if td.find('a'):
-            # get players name and team from link
+            # get players name from link
             href_tag = td.find('a').attrs['href'].split('--')
-            stats_row.append([href_tag[0].split('pp-')[1], href_tag[1]])
+            stats_row.append(href_tag[1])
             continue
         stats_row.append(td.text.strip())
     return stats_row
 
 
-def populate_stats(stat_row, headers, match_id, engine):
+def populate_stats(stat_row, headers, team, match_id, engine):
     match_stats_player = MatchStatsPlayer()
     match_stats_player.game_id = match_id
     match_stats_player.updated_at = datetime.datetime.now()
@@ -140,9 +174,9 @@ def populate_stats(stat_row, headers, match_id, engine):
         key = headers[i].upper()
         value = stat_row[i]
         if key == 'PLAYER':
-            match_stats_player.team = value[0]
-            match_stats_player.player_name = value[1]
-            match_stats_player.player_id = find_player_id(value[0], value[1], engine)
+            match_stats_player.team = team
+            match_stats_player.player_name = value
+            match_stats_player.player_id = find_player_id(team, value, engine)
             if match_stats_player.player_id is None:
                 LOGGER.debug(f'Player not in current season player list {value}. Adding without playerid.')
         elif key == "K":
@@ -214,9 +248,14 @@ def populate_stats(stat_row, headers, match_id, engine):
 def find_player_id(team_name, player_name, engine):
     session = sessionmaker(bind=engine)
     with session() as session:
-        player = session.execute(select(Player).filter_by(team=team_name, name_key=player_name)).first()
-        if player:
-            return player[0].id
+        player_match = session.execute(select(Player).filter_by(name_key=player_name)).all()
+        for player in player_match:
+            if player[0].team == team_name:
+                # more likely to be the player we want as they are on the expected team
+                return player[0].id
+        # no team matches, just check for any match and return that
+        if len(player_match):
+            return player_match[0][0].id
         return None
 
 
