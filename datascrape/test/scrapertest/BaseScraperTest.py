@@ -1,11 +1,13 @@
 from unittest import TestCase
+import os
+from dotenv import load_dotenv
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from model import base
 
-TEST_DB_CONN_STRING = 'postgresql://postgres:oscar12!@localhost:5432/tiplos-test?gssencmode=disable'
-
+load_dotenv()
+TEST_DB_CONN_STRING = os.getenv('DATABASE_URL_TEST')
 
 class BaseScraperTest(TestCase):
 
