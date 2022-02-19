@@ -3,7 +3,9 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 
 from api.schema.fantasy_schema import FantasySchema
-from model import Player, PlayerFantasy
+from api.schema.match_stats_schema import MatchStatsSchema
+from api.schema.supercoach_schema import SuperCoachSchema
+from model import Player, PlayerFantasy, PlayerSupercoach, MatchStatsPlayer
 from model.base import Base
 from model.game import Game
 from api.schema.player.player_injury import PlayerInjurySchema
@@ -72,26 +74,58 @@ def select_players():
         return jsonify(dump_data)
 
 
-@app.route("/fantasy_points")
-def select_fantasies():
+@app.route("/player_points")
+def select_supercoach():
+    available_modes = ['supercoach', 'fantasy']
+    mode = request.args.get('mode')
+    if mode not in available_modes:
+        return f"Required argument 'mode' is not valid. valid values: {available_modes}", 400
     session = sessionmaker(bind=engine)
     with session() as session:
-        fantasy_points = session.query(PlayerFantasy)
+        model = PlayerSupercoach if mode == 'supercoach' else PlayerFantasy
+        data = session.query(model)
         for key in request.args.keys():
             value = request.args.get(key)
             if key == 'id':
-                fantasy_points = fantasy_points.filter_by(id=value)
+                data = data.filter_by(id=value)
             if key == 'round':
-                fantasy_points = fantasy_points.filter_by(round=value)
+                data = data.filter_by(round=value)
             if key == 'year':
-                fantasy_points = fantasy_points.filter_by(year=value)
+                data = data.filter_by(year=value)
             if key == 'team':
-                fantasy_points = fantasy_points.filter(PlayerFantasy.player.has(team=value))
+                data = data.filter(model.player.has(team=value))
             if key == 'name_key':
-                fantasy_points = fantasy_points.filter(PlayerFantasy.player.has(name_key=value))
-        fantasy_points = fantasy_points.order_by('year', 'round').all()
-        fantasy_schema = FantasySchema(many=True)
-        dump_data = fantasy_schema.dump(fantasy_points)
+                data = data.filter(model.player.has(name_key=value))
+        data = data.order_by('year', 'round').all()
+        schema = SuperCoachSchema(many=True) if mode == 'supercoach' else FantasySchema(many=True)
+        dump_data = schema.dump(data)
+        return jsonify(dump_data)
+
+
+@app.route("/match_stats")
+def select_matchstats():
+    required_param_opts = ['id', 'game_id']
+    accept_request = False
+    for opt in required_param_opts:
+        if opt in request.args:
+            accept_request = True
+            break
+    if not accept_request:
+        return f"Endpoint requires at least one of the following request params: {required_param_opts}"
+    session = sessionmaker(bind=engine)
+    with session() as session:
+        data = session.query(MatchStatsPlayer)
+        for key in request.args.keys():
+            value = request.args.get(key)
+            if key == 'id':
+                data = data.filter_by(id=value)
+            elif key == 'team':
+                data = data.filter_by(team=value)
+            elif key == 'game_id':
+                data = data.filter_by(game_id=value)
+        data = data.order_by('id').all()
+        schema = MatchStatsSchema(many=True)
+        dump_data = schema.dump(data)
         return jsonify(dump_data)
 
 
