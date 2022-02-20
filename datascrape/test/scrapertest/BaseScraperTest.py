@@ -9,6 +9,7 @@ from model import base
 load_dotenv()
 TEST_DB_CONN_STRING = os.getenv('DATABASE_URL_TEST')
 
+
 class BaseScraperTest(TestCase):
 
     @classmethod

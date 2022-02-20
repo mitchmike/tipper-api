@@ -3,6 +3,8 @@ from dotenv import load_dotenv
 
 from flask import Flask
 
+from api.route import auth
+
 
 def create_app(test_config=None):
     load_dotenv()
@@ -25,10 +27,12 @@ def create_app(test_config=None):
         pass
 
     from . import db
-    db.init_app(app)
+    with app.app_context():
+        db.init_app(app)
 
-    from . import select_api
+    from api.route import select_api
     app.register_blueprint(select_api.bp)
+    app.register_blueprint(auth.bp)
 
     # a simple page that says hello
     @app.route('/hello')
