@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}User Management{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<form>
+{% for user in user_list %}
+    <div>{{ user }}<button name="user_id" value={{user.id}} type="submit" formmethod="get" formaction="{{url_for('admin.user_detail')}}">Edit</button></div>
+{% endfor %}
+</form>
+{% endblock %}

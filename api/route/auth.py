@@ -1,6 +1,6 @@
 import functools
 
-from flask import Blueprint, request, flash, url_for, redirect, session, g
+from flask import Blueprint, request, flash, url_for, redirect, session, g, render_template
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -28,7 +28,8 @@ def admin_required(view):
         if g.user is None:
             return redirect(url_for('auth.login'))
         if 'ADMIN' not in g.user.roles:
-            return {'message': 'admin rights required'}
+            flash("admin rights required")
+            return redirect(url_for('index'))
         return view(**kwargs)
 
     return wrapped_view
@@ -72,9 +73,9 @@ def register():
             except IntegrityError:
                 error = f"Email {email} is already registered."
             else:
-                return {'message': f'Successfully registered with email {email}'}
-        return {'message': error}
-    return {'message': 'Please register with post request on this endpoint'}
+                return redirect(url_for('index'))
+        flash(error)
+    return render_template('auth/register.html')
 
 
 @bp.route('/login', methods=('GET', 'POST'))
@@ -91,15 +92,14 @@ def login():
         if error is None:
             session.clear()
             session['user_id'] = user.id
-            return {'message': 'Login successful'}
+            return redirect(url_for('index'))
         flash(error)
-        return {'message': error}
-    return {'message': 'Please login with post request on this endpoint'}
+    return render_template('auth/login.html')
 
 
 @bp.route('/logout')
 def logout():
     session.clear()
-    return {'message': 'Logged out'}
+    return redirect(url_for('index'))
 
 

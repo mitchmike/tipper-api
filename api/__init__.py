@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 from flask import Flask
 
-from api.route import auth
+from api.route import auth, admin, select_api
 
 
 def create_app(test_config=None):
@@ -30,12 +30,12 @@ def create_app(test_config=None):
     with app.app_context():
         db.init_app(app)
 
-    from api.route import select_api
     app.register_blueprint(select_api.bp)
     app.register_blueprint(auth.bp)
+    app.register_blueprint(admin.bp)
 
     # a simple page that says hello
-    @app.route('/hello')
+    @app.route('/index')
     def hello():
         return 'Hello, World!'
 

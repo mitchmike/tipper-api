@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Admin Home{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<ul>
+    <li><a href="{{url_for('admin.users')}}">User Management</a></li>
+</ul>
+{% endblock %}
