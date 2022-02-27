@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-from flask import Flask
+from flask import Flask, url_for, redirect
 
 from api.route import auth, admin, select_api
 
@@ -9,7 +9,7 @@ from api.route import auth, admin, select_api
 def create_app(test_config=None):
     load_dotenv()
     # create and configure the app
-    app = Flask(__name__, instance_relative_config=True)
+    app = Flask(__name__, instance_relative_config=True, static_folder='./static')
     env_config = os.getenv("APP_SETTINGS", "config.DevelopmentConfig")
     app.config.from_object(env_config)
 
@@ -34,9 +34,8 @@ def create_app(test_config=None):
     app.register_blueprint(auth.bp)
     app.register_blueprint(admin.bp)
 
-    # a simple page that says hello
-    @app.route('/index')
-    def hello():
-        return 'Hello, World!'
+    @app.route('/')
+    def index():
+        return redirect(url_for('admin.index'))
 
     return app

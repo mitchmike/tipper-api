@@ -1,0 +1,158 @@
+#indexmenu .row .col-sm:hover {
+    background-color: aliceblue;
+}
+#indexmenu .row .col-sm {
+    background-color: rgb(233, 245, 255);
+}
+
+main {
+    text-align: center;
+}
+
+.form-control {
+    display: inline-block;
+    width: auto;
+}
+
+.container {
+    max-width:100%;
+}
+
+.display-5 {
+    font-size: 2.5rem;
+    font-weight: 300;
+    line-height: 1.2;
+}
+
+.table-bordered td, .table-bordered th  {
+    border: 1px solid #000000
+}
+
+.gamewin {
+    color:rgb(107, 221, 107);
+    background-color: #343a40!important;
+}
+
+.gameloss {
+    color: rgb(236, 113, 113);
+}
+
+
+
+.statcheckboxes {
+    padding:10px;
+    background-color: #f7f7f9;
+}
+
+.teamdetailchoice {
+    max-width: 1100px;
+    display: flex;
+    flex-wrap: wrap;
+    margin: auto;
+}
+
+#tipfilter {
+    max-width: 500px;
+    margin: auto;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+@media (min-width: 992px) {
+    #tipbody {
+        margin-left: 30px;
+        border-left: 1px solid rgba(0,0,0,.1);
+    }
+}
+
+
+#richmond:hover {
+    color: black;
+    background-color: #ffd200;
+}
+
+#melbourne:hover {
+    color: white;
+    background-color: #cc2031;
+}
+
+#brisbanel:hover {
+    color: white;
+    background-color: #7c0040;
+}
+
+
+#bullldogs:hover {
+    color: white;
+    background-color: #1b2e71;
+}
+
+#geelong:hover {
+    color: white;
+    background-color: #002b5c;
+}
+
+#padelaide:hover {
+    color: white;
+    background-color: #008aab;
+}
+
+#stkilda:hover {
+    color: white;
+    background-color: #ed1b2f;
+}
+
+#collingwood:hover {
+    color: white;
+    background-color: #000000;
+}
+
+#gws:hover {
+    color: white;
+    background-color: #f47920;
+}
+
+#carlton:hover {
+    color: white;
+    background-color: #031a29;
+}
+
+#fremantle:hover {
+    color: white;
+    background-color: #2a0d54;
+}
+
+#essendon:hover {
+    color: white;
+    background-color: #CC2031;
+}
+
+#goldcoast:hover {
+    color: white;
+    background-color: #ee3728;
+}
+
+#hawthorn:hover {
+    color: white;
+    background-color: #4d2004;
+}
+
+#swans:hover {
+    color: white;
+    background-color: #ed171f;
+}
+
+#kangaroos:hover {
+    color: black;
+    background-color: #c4d1e5;
+}
+
+#adelaide:hover {
+    color: black;
+    background-color: gold;
+}
+
+#westcoast:hover {
+    color: black;
+    background-color: #f2a900;
+}

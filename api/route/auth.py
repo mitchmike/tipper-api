@@ -81,6 +81,7 @@ def register():
             except IntegrityError:
                 error = f"Email {email} is already registered."
             else:
+                flash(f'User created with email: {email}')
                 return redirect(url_for('admin.index'))
         flash(error)
     return redirect(request.referrer)

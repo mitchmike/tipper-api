@@ -22,6 +22,7 @@ def users():
     Session = db.get_db_session_factory()
     db_session = Session()
     users = db_session.query(User).order_by('id').all()
+    db_session.close()
     return render_template('/admin/users.html', user_list=users)
 
 
@@ -35,6 +36,7 @@ def user_detail():
     Session = db.get_db_session_factory()
     db_session = Session()
     user = db_session.query(User).filter_by(id=user_id).first()
+    db_session.close()
     return render_template('admin/user_detail.html', user=user)
 
 
@@ -60,6 +62,7 @@ def user_delete():
         return redirect(url_for('admin.user_detail', user_id=user.id))
     db_session.delete(user)
     db_session.commit()
+    db_session.close()
     flash('User deleted')
     return redirect(url_for('admin.users'))
 
@@ -104,5 +107,6 @@ def user_update():
     user.updated_at = datetime.datetime.now()
     db_session.add(user)
     db_session.commit()
+    db_session.close()
     flash('User updated')
     return redirect(url_for('admin.users'))
