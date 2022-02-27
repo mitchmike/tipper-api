@@ -9,7 +9,7 @@ from api.route import auth, admin, select_api
 def create_app(test_config=None):
     load_dotenv()
     # create and configure the app
-    app = Flask(__name__, instance_relative_config=True, static_folder='./static')
+    app = Flask(__name__, instance_relative_config=True)
     env_config = os.getenv("APP_SETTINGS", "config.DevelopmentConfig")
     app.config.from_object(env_config)
 

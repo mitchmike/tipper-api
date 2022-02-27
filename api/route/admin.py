@@ -87,8 +87,8 @@ def user_update():
     Session = db.get_db_session_factory()
     db_session = Session()
     user = db_session.query(User).filter_by(id=user_id).first()
-    user.first_name = first_name if first_name else user.first_name
-    user.last_name = last_name if last_name else user.last_name
+    user.first_name = first_name
+    user.last_name = last_name
     if len(password) > 0:
         if g.user.id == user_id or 'ROOT' in g.user.roles:
             user.password = generate_password_hash(password)
