@@ -5,7 +5,8 @@
 {% endblock %}
 
 {% block content %}
-<form method="post">
+<form method="post" autocomplete="off">
+    <input autocomplete="false" name="hidden" type="text" style="display:none;">
     <input name="id" value="{{ user.id }}" hidden/>
     <table class="table table-hover">
         {% if user.id %}
@@ -22,8 +23,12 @@
         <tr><td>email</td><td><input name="email" type="text" id="email" value="{{ user.email }}" required {% if user.email %}disabled{% endif %}/></td></tr>
         {% if g.user.id == user.id or 'ROOT' in g.user.roles %}
         <tr>
-            <td>password</td><td><input name="password" type="password" id="password" value="" {% if not user.id %}required{% endif %}/>
-            <label> Re-enter password:</label><input name="re_password" type="password" id="re_password" value="" {% if not user.id %}required{% endif %}/></td>
+            <td>password</td>
+            <td>
+                <input name="password" type="password" id="password" value="" {% if not user.id %}required{% endif %} autocomplete="new-password"/>
+                <label> Re-enter password:</label>
+                <input name="re_password" type="password" id="re_password" value="" {% if not user.id %}required{% endif %} autocomplete="new-password"/>
+            </td>
         </tr>
         {% endif %}
         <tr><td>roles</td><td>

@@ -28,7 +28,10 @@
                 <td>{{ user.roles }}</td>
                 <td>{{ user.created_at }}</td>
                 <td>{{ user.updated_at }}</td>
-                <td><button name="user_id" value={{user.id}} type="submit" formmethod="get" formaction="{{url_for('admin.user_detail')}}">Edit</button></td>
+                <td>
+                    <button name="user_id" value={{user.id}} type="submit" formmethod="get" formaction="{{url_for('admin.user_detail')}}">Edit</button>
+                    <button name="id" value={{user.id}} type="submit" formmethod="post" formaction="{{url_for('admin.user_delete')}}">Delete</button>
+                </td>
             </tr>
         {% endfor %}
     </table>
