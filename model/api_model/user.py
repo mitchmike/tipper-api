@@ -12,7 +12,7 @@ class User(Base):
     last_name = Column(String)
     email = Column(String, nullable=False, unique=True)
     password = Column(String, nullable=False)
-    roles = Column(ARRAY(String))
+    roles = Column(ARRAY(String), default=ARRAY(String))
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
 
@@ -21,6 +21,7 @@ class User(Base):
         self.last_name = last_name
         self.email = email
         self.password = password
+        self.roles = []
         self.created_at = datetime.datetime.now()
         self.updated_at = datetime.datetime.now()
 

@@ -27,9 +27,9 @@ def admin_required(view):
     def wrapped_view(**kwargs):
         if g.user is None:
             return redirect(url_for('auth.login'))
-        if 'ADMIN' not in g.user.roles:
+        if 'ROOT' not in g.user.roles and 'ADMIN' not in g.user.roles:
             flash("admin rights required")
-            return redirect(url_for('index'))
+            return redirect(url_for('admin.index'))
         return view(**kwargs)
 
     return wrapped_view
@@ -49,6 +49,8 @@ def load_logged_in_user():
 
 @bp.route('/register', methods=('GET', 'POST'))
 def register():
+    if request.method == 'GET':
+        return render_template('auth/register.html')
     if request.method == 'POST':
         first_name = request.form['first_name']
         last_name = request.form['last_name']
@@ -68,14 +70,20 @@ def register():
                 with Session() as session:
                     password = generate_password_hash(password)
                     user = User(first_name, last_name, email, password)
+                    roles = {
+                        'ADMIN': request.form.get('roles.ADMIN')
+                    }
+                    for role in roles.keys():
+                        if roles[role] == 'on':
+                            user.roles.append(role)
                     session.add(user)
                     session.commit()
             except IntegrityError:
                 error = f"Email {email} is already registered."
             else:
-                return redirect(url_for('index'))
+                return redirect(url_for('admin.index'))
         flash(error)
-    return render_template('auth/register.html')
+    return redirect(request.referrer)
 
 
 @bp.route('/login', methods=('GET', 'POST'))
@@ -87,12 +95,12 @@ def login():
         db_session = Session()
         error = None
         user = db_session.query(User).filter(User.email == email).first()
-        if user is None or check_password_hash(user.password, password):
+        if user is None or not check_password_hash(user.password, password):
             error = 'Login unsuccessful.'
         if error is None:
             session.clear()
             session['user_id'] = user.id
-            return redirect(url_for('index'))
+            return redirect(url_for('admin.index'))
         flash(error)
     return render_template('auth/login.html')
 
@@ -100,6 +108,6 @@ def login():
 @bp.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('index'))
+    return redirect(url_for('admin.index'))
 
 

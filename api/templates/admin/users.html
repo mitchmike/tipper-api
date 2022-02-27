@@ -9,5 +9,6 @@
 {% for user in user_list %}
     <div>{{ user }}<button name="user_id" value={{user.id}} type="submit" formmethod="get" formaction="{{url_for('admin.user_detail')}}">Edit</button></div>
 {% endfor %}
+    <input value="Create user" type="submit" formaction="{{url_for('admin.user_create')}}"/>
 </form>
 {% endblock %}

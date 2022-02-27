@@ -5,15 +5,41 @@
 {% endblock %}
 
 {% block content %}
-<form>
+<form method="post">
+    <input name="id" value="{{ user.id }}" hidden/>
     <table>
-    <tr><td>ID</td><td>{{ user.id }}</td></tr>
-    <tr><td>first_name</td><td>{{ user.first_name }}</td></tr>
-    <tr><td>last_name</td><td>{{ user.last_name }}</td></tr>
-    <tr><td>email</td><td>{{ user.email }}</td></tr>
-    <tr><td>roles</td><td>{{ user.roles }}</td></tr>
-    <tr><td>created_at</td><td>{{ user.created_at }}</td></tr>
-    <tr><td>updated_at</td><td>{{ user.updated_at }}</td></tr>
+        {% if user.id %}
+        <tr>
+            <td>ID</td>
+            <td>
+                <input name="user_id" type="text" id="user_id" value="{{ user.id }}" disabled />
+            </td>
+        </tr>
+        {% endif %}
+        <tr><td>first_name</td><td><input name="first_name" type="text" id="first_name" value="{{ user.first_name }}"/></td></tr>
+        <tr><td>last_name</td><td><input name="last_name" type="text" id="last_name" value="{{ user.last_name }}"/></td></tr>
+        <!--disable email field for existing accounts-->
+        <tr><td>email</td><td><input name="email" type="text" id="email" value="{{ user.email }}" {% if user.email %}disabled{% endif %}/></td></tr>
+        {% if g.user.id == user.id or 'ROOT' in g.user.roles %}
+        <tr>
+            <td>password</td><td><input name="password" type="password" id="password" value="" />
+            <label> Re-enter password:</label><input name="re_password" type="password" id="re_password" value="" /></td>
+        </tr>
+        {% endif %}
+        <tr><td>roles</td><td>
+            <input type="checkbox" name="roles.ROOT" {% if user.roles and 'ROOT' in user.roles %}checked{% endif %} disabled/><label>ROOT</label>
+            <input type="checkbox" name="roles.ADMIN" {% if user.roles and 'ADMIN' in user.roles %}checked{% endif %}/><label>ADMIN</label>
+        </td></tr>
+        <tr><td>created_at</td><td>{{ user.created_at }}</td></tr>
+        <tr><td>updated_at</td><td>{{ user.updated_at }}</td></tr>
     </table>
+    <div>
+        {% if user.id %}
+        <input type="submit" formaction="{{url_for('admin.user_update')}}" value="Update">
+        <input type="submit" formaction="{{url_for('admin.user_delete')}}" value="Delete">
+        {% else %}
+        <input type="submit" formaction="{{url_for('auth.register')}}" value="Create">
+        {% endif %}
+    </div>
 </form>
 {% endblock %}
