@@ -3,7 +3,7 @@ import bs4
 import os
 import copy
 
-from datascrape.scrapers import fantasyScrape
+from datascrape.scrapers.fantasyScrape import FantasyScraper
 from model import base
 from model import Player
 from model.player_fantasy import PlayerFantasy
@@ -41,6 +41,7 @@ class TestFantasyScrape(BaseScraperTest):
                 </table>'''
 
     def setUp(self):
+        self.fantasyScrape = FantasyScraper(TestFantasyScrape._engine, 2021, 2021, 1, 1)
         with TestFantasyScrape.Session() as cleanup_session:
             cleanup_session.query(PlayerFantasy).delete()
             cleanup_session.query(Player).delete()
@@ -54,23 +55,23 @@ class TestFantasyScrape(BaseScraperTest):
 
         # Set up one-row table
         one_row_soup = bs4.BeautifulSoup(self.HTML_ONE_ROW, 'html.parser')
-        self.one_row_table, self.one_row_headers = fantasyScrape.get_data_table(one_row_soup)
-        self.one_data_row = fantasyScrape.scrape_rows(self.one_row_table)[0]
-        self.one_fantasy = fantasyScrape.populate_fantasy('dream_team', self.one_data_row,
+        self.one_row_table, self.one_row_headers = self.fantasyScrape.get_data_table(one_row_soup)
+        self.one_data_row = self.fantasyScrape.scrape_rows(self.one_row_table)[0]
+        self.one_fantasy = self.fantasyScrape.populate_fantasy('dream_team', self.one_data_row,
                                                           self.one_row_headers, 2021, 1, TestFantasyScrape._engine)
 
         # Stub html file used - to refresh file run get_html.py with 'players' as first arg
         with open(self.HTML_SOURCE_FILE, 'r') as file:
             soup = bs4.BeautifulSoup(file.read(), 'html.parser')
-        self.table, self.headers = fantasyScrape.get_data_table(soup)
-        self.data_rows = fantasyScrape.scrape_rows(self.table)
+        self.table, self.headers = self.fantasyScrape.get_data_table(soup)
+        self.data_rows = self.fantasyScrape.scrape_rows(self.table)
         self.fantasies = []
         for row in self.data_rows[0:2]:
-            self.fantasies.append(fantasyScrape.populate_fantasy('dream_team', row,
+            self.fantasies.append(self.fantasyScrape.populate_fantasy('dream_team', row,
                                                                  self.headers, 2021, 1, TestFantasyScrape._engine))
 
     def test_scrape_row(self):
-        row = fantasyScrape.scrape_rows(self.one_row_table)
+        row = self.fantasyScrape.scrape_rows(self.one_row_table)
         data_row = row[0]
         self.assertEqual(len(data_row), 7)
         self.assertEqual(data_row[0], '1')
@@ -82,7 +83,7 @@ class TestFantasyScrape(BaseScraperTest):
         self.assertEqual(data_row[6], '19.1')
 
     def test_scrape_row_multiple(self):
-        data_rows = fantasyScrape.scrape_rows(self.table)
+        data_rows = self.fantasyScrape.scrape_rows(self.table)
         self.assertEqual(len(data_rows), 404)
         data_row = data_rows[0]
         self.assertEqual(data_row[0], '1')
@@ -103,7 +104,7 @@ class TestFantasyScrape(BaseScraperTest):
 
     def test_populate_fantasy_player_doesnt_exist(self):
         self.one_data_row[1] = 'NO_NAME'
-        fantasy = fantasyScrape.populate_fantasy('dream_team', self.one_data_row, self.one_row_headers,
+        fantasy = self.fantasyScrape.populate_fantasy('dream_team', self.one_data_row, self.one_row_headers,
                                                  2021, 1, TestFantasyScrape._engine)
         self.assertIsNotNone(fantasy)
         self.assertEqual(fantasy.player_id, None)
@@ -115,7 +116,7 @@ class TestFantasyScrape(BaseScraperTest):
         self.assertEqual(fantasy.round_value, '19.1')
 
     def test_populate_fantasy_player_exists(self):
-        fantasy = fantasyScrape.populate_fantasy('dream_team', self.one_data_row, self.one_row_headers,
+        fantasy = self.fantasyScrape.populate_fantasy('dream_team', self.one_data_row, self.one_row_headers,
                                                  2021, 1, TestFantasyScrape._engine)
         self.assertIsNotNone(fantasy)
         self.assertEqual(fantasy.player_id, 1)
@@ -129,15 +130,15 @@ class TestFantasyScrape(BaseScraperTest):
     def test_insert_fantasies_already_exists(self):
         one_fantasy_copy = copy.deepcopy(self.one_fantasy)
         # insert first fantasy
-        fantasyScrape.insert_fantasies('dream_team', [self.one_fantasy], 2021, 1, TestFantasyScrape._engine)
+        self.fantasyScrape.insert_fantasies('dream_team', [self.one_fantasy], 2021, 1, TestFantasyScrape._engine)
         # try to insert same fantasy again
-        fantasyScrape.insert_fantasies('dream_team', [one_fantasy_copy], 2021, 1, TestFantasyScrape._engine)
+        self.fantasyScrape.insert_fantasies('dream_team', [one_fantasy_copy], 2021, 1, TestFantasyScrape._engine)
         with TestFantasyScrape.Session() as session:
             fantasy_persisted = session.query(PlayerFantasy).all()
         self.assertEqual(len(fantasy_persisted), 1)
 
     def test_insert_fantasies_new_fantasy(self):
-        fantasyScrape.insert_fantasies('dream_team', [self.one_fantasy], 2021, 1, TestFantasyScrape._engine)
+        self.fantasyScrape.insert_fantasies('dream_team', [self.one_fantasy], 2021, 1, TestFantasyScrape._engine)
         with TestFantasyScrape.Session() as session:
             fantasy_persisted = session.query(PlayerFantasy).all()
         self.assertEqual(len(fantasy_persisted), 1)
@@ -152,7 +153,7 @@ class TestFantasyScrape(BaseScraperTest):
         self.assertEqual(fantasy.round_value, 19.1)
 
     def test_insert_fantasies_multiple(self):
-        fantasyScrape.insert_fantasies('dream_team', self.fantasies, 2021, 1, TestFantasyScrape._engine)
+        self.fantasyScrape.insert_fantasies('dream_team', self.fantasies, 2021, 1, TestFantasyScrape._engine)
         with TestFantasyScrape.Session() as session:
             fantasy_persisted = session.query(PlayerFantasy).all()
         self.assertEqual(len(fantasy_persisted), 2)
@@ -179,9 +180,9 @@ class TestFantasyScrape(BaseScraperTest):
     def test_insert_fantasies_no_player_id_in_fantasy(self):
         # insert two good and one bad and assert that 2 are successfully inserted.
         invalid_fantasy_row = ['3', 'fake_player_name_not_in_db', 'essendon-bombers', '$607,000', '$738,000', '141', '19.1']
-        self.fantasies.insert(1, (fantasyScrape.populate_fantasy('dream_team', invalid_fantasy_row, self.headers,
+        self.fantasies.insert(1, (self.fantasyScrape.populate_fantasy('dream_team', invalid_fantasy_row, self.headers,
                                                                  2021, 1, TestFantasyScrape._engine)))
-        fantasyScrape.insert_fantasies('dream_team', self.fantasies, 2021, 1, TestFantasyScrape._engine)
+        self.fantasyScrape.insert_fantasies('dream_team', self.fantasies, 2021, 1, TestFantasyScrape._engine)
         with TestFantasyScrape.Session() as session:
             fantasy_persisted = session.query(PlayerFantasy).all()
         self.assertEqual(len(fantasy_persisted), 2)

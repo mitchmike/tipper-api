@@ -40,8 +40,8 @@
     </table>
     <div>
         {% if user.id %}
-        <input type="submit" formaction="{{url_for('admin.user_update')}}" value="Update">
-        <input type="submit" formaction="{{url_for('admin.user_delete')}}" value="Delete">
+        <input type="submit" formaction="{{url_for('users.update')}}" value="Update">
+        <input type="submit" formaction="{{url_for('users.delete')}}" value="Delete">
         {% else %}
         <input type="submit" formaction="{{url_for('auth.register')}}" value="Create">
         {% endif %}

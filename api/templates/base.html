@@ -37,15 +37,15 @@
 <div class="container">Logged in as {{ g.user.email }}</div>
 {% endif %}
 <section class="container p-5">
-
+    {% for message in get_flashed_messages() %}
+        <div class="flash">{{ message }}</div>
+    {% endfor %}
+    <br/>
   <header>
     {% block header %}{% endblock %}
 
   </header>
 
-    {% for message in get_flashed_messages() %}
-        <div class="flash">{{ message }}</div>
-    {% endfor %}
     {% block content %}{% endblock %}
 </section>
 

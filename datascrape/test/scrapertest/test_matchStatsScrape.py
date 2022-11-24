@@ -10,6 +10,7 @@ class TestMatchStatsScrape(BaseScraperTest):
     HTML_SOURCE_FILE_ADV = os.path.join(DIR_PATH, '../html_files', get_html.MATCH_STATS_ADV_FILE_NAME)
 
     def setUp(self):
+        self.matchStatsScrape = MatchStatsScraper(TestMatchStatsScrape._engine, 2021, 2021, 1, 4)
         with TestMatchStatsScrape.Session() as cleanup_session:
             cleanup_session.query(Player).delete()
             cleanup_session.query(MatchStatsPlayer).delete()
@@ -18,10 +19,6 @@ class TestMatchStatsScrape(BaseScraperTest):
             cleanup_session.execute("ALTER SEQUENCE player_id_seq RESTART WITH 1")
             cleanup_session.execute("ALTER SEQUENCE match_stat_id_seq RESTART WITH 1")
             cleanup_session.commit()
-        # Stub html file used - to refresh file run get_html.py with 'players' as first arg
-        with open(self.HTML_SOURCE_FILE, 'r') as file:
-            soup = bs4.BeautifulSoup(file.read(), 'lxml')
-        self.milestone_recorder = MileStoneRecorder(TestMatchStatsScrape._engine)
 
     def test_populate_request_queue(self):
         with TestMatchStatsScrape.Session() as add_games_for_test:
@@ -29,7 +26,7 @@ class TestMatchStatsScrape(BaseScraperTest):
             add_games_for_test.add(Game(7, 'c', 'd', 2021, 1))
             add_games_for_test.add(Game(10, 'a', 'b', 2021, 5))  # out of round_number range
             add_games_for_test.commit()
-        request_q = populate_request_queue(2021, 2021, 1, 4, TestMatchStatsScrape._engine)
+        request_q = self.matchStatsScrape.populate_request_queue()
         self.assertEqual(request_q.unfinished_tasks, 4)
         first_queue_item = request_q.get()
         self.assertEqual(first_queue_item['year'], 2021)
@@ -44,7 +41,7 @@ class TestMatchStatsScrape(BaseScraperTest):
             response = {'year': 2021, 'round_number': 1, 'match_id': 10327, 'mode': 'basic',
                         'url': 'not_required_for_test',
                         'response': file.read()}
-        process_response(response, self.milestone_recorder, TestMatchStatsScrape._engine)
+        self.matchStatsScrape.process_response(response)
         with TestMatchStatsScrape.Session() as check_result:
             match_stats_persisted = check_result.query(MatchStatsPlayer).all()
         self.assertEqual(len(match_stats_persisted), 46)
@@ -95,7 +92,7 @@ class TestMatchStatsScrape(BaseScraperTest):
         headers = ['Player', 'K', 'HB', 'D', 'M', 'G', 'B', 'T', 'HO', 'GA', 'I50', 'CL', 'CG', 'R50', 'FF', 'FA', 'AF', 'SC']
         match_id = 10_000
         team = 'richmond-tigers'
-        match_stats_list = process_row(row, headers, [], team, match_id, TestMatchStatsScrape._engine)
+        match_stats_list = self.matchStatsScrape.process_row(row, headers, [], team, match_id)
         self.assertEqual(len(match_stats_list), 1)
         match_stats_player = match_stats_list[0]
         self.assertEqual(match_stats_player.game_id, 10_000)
@@ -141,7 +138,7 @@ class TestMatchStatsScrape(BaseScraperTest):
             '<td class="statdata">120</td>\n'
             '</tr>')
         row = bs4.BeautifulSoup(row_string, 'lxml')
-        stats_row = scrape_stats_one_row(row)
+        stats_row = MatchStatsScraper.scrape_stats_one_row(row)
         self.assertEqual(stats_row, ['jack-graham', '22', '11', '33', '5', '0', '1', '3', '0', '1',
                                      '11', '5', '4', '1', '2', '1', '115', '120'])
 
@@ -157,8 +154,7 @@ class TestMatchStatsScrape(BaseScraperTest):
         headers = ['Player', 'K', 'HB', 'D', 'M', 'G', 'B', 'T', 'HO', 'GA', 'I50', 'CL', 'CG', 'R50', 'FF', 'FA', 'AF',
                    'SC']
         match_id = 10_000
-        match_stats_player = populate_stats(stat_row, headers, team, match_id,
-                                            TestMatchStatsScrape._engine)
+        match_stats_player = self.matchStatsScrape.populate_stats(stat_row, headers, team, match_id)
         self.assertEqual(match_stats_player.game_id, 10_000)
         self.assertEqual(match_stats_player.team, 'melbourne-demons')
         self.assertEqual(match_stats_player.player_name, 'clayton-oliver')
@@ -185,19 +181,19 @@ class TestMatchStatsScrape(BaseScraperTest):
         with TestMatchStatsScrape.Session() as session:
             session.add(player)
             session.commit()
-        player_id = find_player_id('richmond', 'michael-jack',
+        player_id = MatchStatsScraper.find_player_id('richmond', 'michael-jack',
                                    TestMatchStatsScrape._engine)
         self.assertEqual(player_id, 12)
-        player_id_no_team = find_player_id('richWHAT', 'michael-jack',
+        player_id_no_team = MatchStatsScraper.find_player_id('richWHAT', 'michael-jack',
                                    TestMatchStatsScrape._engine)
         self.assertEqual(player_id_no_team, 12)
-        player_id_none = find_player_id('richmond', 'michael-jackson',
+        player_id_none = MatchStatsScraper.find_player_id('richmond', 'michael-jackson',
                                         TestMatchStatsScrape._engine)
         self.assertEqual(player_id_none, None)
 
     def test_add_milestone(self):
-        add_milestone('1234', 'advanced', 'milestone_1', self.milestone_recorder)
-        self.milestone_recorder.commit_milestones()
+        self.matchStatsScrape.add_milestone('1234', 'advanced', 'milestone_1')
+        self.matchStatsScrape.milestone_recorder.commit_milestones()
         with TestMatchStatsScrape.Session() as session:
             persisted_milestone = session.query(Milestone).all()
         self.assertEqual(len(persisted_milestone), 1)

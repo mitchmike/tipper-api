@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}Datascrape Controls{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+    <div class="modal" id="loadingModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex align-items-center ">
+                        <p>Loading...</p>
+                        <div class="spinner-border ml-auto" role="status" aria-hidden="true"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="formModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex align-items-center ">
+                        <p>Loading...</p>
+                        <div class="spinner-border ml-auto" role="status" aria-hidden="true"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <table class="table table-bordered p-0" style="width: 80%">
+        <tr>
+            <td class="p-1">
+                <form action="{{ url_for('scrape_api.trigger_scrape_players') }}" method="get">
+                    <div>
+                        <input data-toggle="modal" data-target="#loadingModal" type="submit" class="btn btn-primary"
+                               value="Scrape Players">
+                    </div>
+                </form>
+            </td>
+        </tr>
+        <tr>
+            <td class="p-1">
+                <form action="{{ url_for('scrape_api.trigger_scrape_games') }}" method="get">
+                    <div>
+                        <input data-toggle="modal" data-target="#loadingModal" type="submit" class="btn btn-primary"
+                               value="Scrape Games">
+                        <input type="text" name="from_year" placeholder="From year">
+                        <input type="text" name="to_year" placeholder="To year">
+                    </div>
+                </form>
+            </td>
+        </tr>
+        <tr>
+            <td class="p-1">
+                <form action="{{ url_for('scrape_api.trigger_scrape_injuries') }}" method="get">
+                    <div>
+                        <input data-toggle="modal" data-target="#loadingModal" type="submit" class="btn btn-primary"
+                               value="Scrape Injuries">
+                    </div>
+                </form>
+            </td>
+        </tr>
+        <tr>
+            <td class="p-1">
+                <form action="{{ url_for('scrape_api.trigger_scrape_fantasies') }}" method="get">
+                    <div>
+                        <input data-toggle="modal" data-target="#loadingModal" type="submit" class="btn btn-primary"
+                               value="Scrape Fantasy Points">
+                        <input type="text" name="from_year" placeholder="From year">
+                        <input type="text" name="to_year" placeholder="To year">
+                        <input type="text" name="from_round" placeholder="From round">
+                        <input type="text" name="to_round" placeholder="To round">
+                    </div>
+                </form>
+            </td>
+        </tr>
+        <tr>
+            <td class="p-1">
+                <form action="{{ url_for('scrape_api.trigger_scrape_match_stats') }}" method="get">
+                    <div>
+                        <input data-toggle="modal" data-target="#loadingModal" type="submit" class="btn btn-primary"
+                               value="Scrape Match Stats">
+                        <input type="text" name="from_year" placeholder="From year">
+                        <input type="text" name="to_year" placeholder="To year">
+                        <input type="text" name="from_round" placeholder="From round">
+                        <input type="text" name="to_round" placeholder="To round">
+                    </div>
+                </form>
+            </td>
+        </tr>
+    </table>
+    <br>
+    <br>
+    <h2>History</h2>
+    <form>
+        <table class="table table-hover">
+            <thead class="thead-dark">
+            <tr>
+                <th scope="col" style="text-align: end;">id</th>
+                <th scope="col">start_time</th>
+                <th scope="col">type</th>
+                <th scope="col">status</th>
+                <th scope="col">time_taken</th>
+                <th scope="col">rows_updated</th>
+            </tr>
+            </thead>
+            {% for scrape in scrape_events %}
+                {% set time_taken = scrape.end_time - scrape.start_time %}
+                {% set status = "Success" if scrape.status == True else "Fail" %}
+                <tr>
+                    <td style="text-align: end;">{{ scrape.id }}</td>
+                    <td>{{ scrape.start_time }}</td>
+                    <td>{{ scrape.type }}</td>
+                    <td>{{ status }}</td>
+                    <td>{{ time_taken }}</td>
+                    <td>{{ scrape.rows_updated }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    </form>
+{% endblock %}

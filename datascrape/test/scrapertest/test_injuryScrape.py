@@ -3,11 +3,10 @@ import datetime
 import bs4
 import os
 
-from datascrape.scrapers import injuryScrape
 from model import base
 from model import Player
 from model.injury import Injury
-from datascrape.scrapers.injuryScrape import TEAMS
+from datascrape.scrapers.injuryScrape import TEAMS, InjuryScraper
 from datascrape.test import get_html
 from datascrape.test.scrapertest.BaseScraperTest import BaseScraperTest
 
@@ -31,6 +30,7 @@ class TestInjuryScrape(BaseScraperTest):
                 </tr>'''
 
     def setUp(self):
+        self.injuryScrape = InjuryScraper(TestInjuryScrape._engine)
         with TestInjuryScrape.Session() as cleanup_session:
             cleanup_session.query(Injury).delete()
             cleanup_session.query(Player).delete()
@@ -50,22 +50,22 @@ class TestInjuryScrape(BaseScraperTest):
         self.headers = []
         for header in self.team_table[0].findAll('td'):
             self.headers.append(header.text.strip())
-        data_rows = injuryScrape.scrape_rows(self.team_table)
+        data_rows = self.injuryScrape.scrape_rows(self.team_table)
         self.injury_row = data_rows[0]
-        self.injury = injuryScrape.populate_injury(self.injury_row, self.TEAM, self.headers, TestInjuryScrape._engine)
+        self.injury = self.injuryScrape.populate_injury(self.injury_row, self.TEAM, self.headers, TestInjuryScrape._engine)
         self.injury.player_id = 5
 
     def test_scrape_row(self):
         one_row_soup = bs4.BeautifulSoup(self.HTML_ONE_ROW, 'html.parser')
         test_table = one_row_soup.findAll('tr')
-        injury_row = injuryScrape.scrape_rows(test_table)[0]
+        injury_row = self.injuryScrape.scrape_rows(test_table)[0]
         self.assertEqual(len(injury_row), 3)
         self.assertEqual(injury_row[0], 'daniel-talia')
         self.assertEqual(injury_row[1], 'Foot')
         self.assertEqual(injury_row[2], 'TBC')
 
     def test_scrape_row_multiple(self):
-        data_rows = injuryScrape.scrape_rows(self.team_table)
+        data_rows = self.injuryScrape.scrape_rows(self.team_table)
         self.assertEqual(len(data_rows), 6)
         injury_row = data_rows[0]
         self.assertEqual(injury_row[0], 'aaron-nietschke')
@@ -77,7 +77,7 @@ class TestInjuryScrape(BaseScraperTest):
             cleanup_session.query(Player).delete()
             cleanup_session.commit()
         test_injury_row = ['daniel-talia', 'Foot', 'TBC']
-        injury = injuryScrape.populate_injury(test_injury_row, self.TEAM, self.headers, TestInjuryScrape._engine)
+        injury = self.injuryScrape.populate_injury(test_injury_row, self.TEAM, self.headers, TestInjuryScrape._engine)
         self.assertIsNotNone(injury)
         self.assertEqual(injury.player_id, None)
         self.assertEqual(injury.injury, 'Foot')
@@ -87,7 +87,7 @@ class TestInjuryScrape(BaseScraperTest):
     def test_populate_injury_player_exists(self):
         # player is defined in setup function
         test_injury_row = ['daniel-talia', 'Foot', 'TBC']
-        injury = injuryScrape.populate_injury(test_injury_row, self.TEAM, self.headers, TestInjuryScrape._engine)
+        injury = self.injuryScrape.populate_injury(test_injury_row, self.TEAM, self.headers, TestInjuryScrape._engine)
         self.assertIsNotNone(injury)
         self.assertEqual(injury.player_id, 5)
         self.assertEqual(injury.injury, 'Foot')
@@ -96,7 +96,7 @@ class TestInjuryScrape(BaseScraperTest):
 
     def test_upsert_injuries(self):
         injury_list = [self.injury]
-        injuryScrape.upsert_injuries(injury_list, TestInjuryScrape._engine)
+        self.injuryScrape.upsert_injuries(injury_list, TestInjuryScrape._engine)
         with TestInjuryScrape.Session() as session:
             injuries_in_db = session.query(Injury).all()
             self.assertEqual(len(injuries_in_db), 1)
@@ -116,7 +116,7 @@ class TestInjuryScrape(BaseScraperTest):
             test_session.commit()
 
         injury_list = [self.injury]
-        injuryScrape.upsert_injuries(injury_list, TestInjuryScrape._engine)
+        self.injuryScrape.upsert_injuries(injury_list, TestInjuryScrape._engine)
         with TestInjuryScrape.Session() as session:
             injuries_in_db = session.query(Injury).all()
             self.assertEqual(len(injuries_in_db), 1)
@@ -137,7 +137,7 @@ class TestInjuryScrape(BaseScraperTest):
             test_session.commit()
 
         injury_list = [self.injury]
-        injuryScrape.upsert_injuries(injury_list, TestInjuryScrape._engine)
+        self.injuryScrape.upsert_injuries(injury_list, TestInjuryScrape._engine)
         with TestInjuryScrape.Session() as session:
             injuries_in_db = session.query(Injury).all()
             self.assertEqual(len(injuries_in_db), 2)

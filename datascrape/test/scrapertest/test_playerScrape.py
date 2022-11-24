@@ -6,7 +6,7 @@ import os
 import copy
 
 from sqlalchemy import select
-from datascrape.scrapers import playerScrape
+from datascrape.scrapers.playerScrape import PlayerScraper
 from model import base
 from model import Player
 from datascrape.test import get_html
@@ -35,6 +35,7 @@ class TestPlayerScrape(BaseScraperTest):
                 </td></tr>'''
 
     def setUp(self):
+        self.playerScrape = PlayerScraper(TestPlayerScrape._engine)
         with TestPlayerScrape.Session() as cleanup_session:
             cleanup_session.query(Player).delete()
             cleanup_session.execute("ALTER SEQUENCE player_id_seq RESTART WITH 1")
@@ -46,11 +47,11 @@ class TestPlayerScrape(BaseScraperTest):
         self.first_row = data[0].parent
         self.last_row = data[-1].parent
         self.headers = [x.text for x in self.first_row.findPrevious('tr').find_all('a')]
-        self.player_row = playerScrape.scrape_one_player(self.first_row)
-        self.player = playerScrape.populate_player(self.player_row, self.headers, self.TEAM)
+        self.player_row = self.playerScrape.scrape_one_player(self.first_row)
+        self.player = self.playerScrape.populate_player(self.player_row, self.headers, self.TEAM)
 
     def test_process_row(self):
-        players = playerScrape.process_row(self.last_row, self.headers, self.TEAM, [])
+        players = self.playerScrape.process_row(self.last_row, self.headers, self.TEAM, [])
         self.assertEqual(len(players), 1)
         player = players[0]
         self.assertEqual(player.first_name, 'Nick')
@@ -60,7 +61,7 @@ class TestPlayerScrape(BaseScraperTest):
         self.assertEqual(player.DOB, datetime.date(1994, 4, 19))
 
     def test_process_row_multiple(self):
-        players = playerScrape.process_row(self.first_row, self.headers, self.TEAM, [])
+        players = self.playerScrape.process_row(self.first_row, self.headers, self.TEAM, [])
         self.assertEqual(len(players), 43)
         player_start = players[0]
         self.assertEqual(player_start.first_name, 'Jake')
@@ -78,7 +79,7 @@ class TestPlayerScrape(BaseScraperTest):
     def test_scrape_player(self):
         one_row_soup = bs4.BeautifulSoup(self.HTML_ONE_ROW, 'html.parser')
         row = one_row_soup.find('tr')
-        player_row = playerScrape.scrape_one_player(row)
+        player_row = self.playerScrape.scrape_one_player(row)
         self.assertEqual(len(player_row), 9)
         self.assertEqual(player_row[0], '16')
         self.assertEqual(player_row[1], 'jake-aarts')
@@ -94,7 +95,7 @@ class TestPlayerScrape(BaseScraperTest):
         test_player_row = [
             '16', 'jake-aarts', '27', '26yr 6mth', '8 Dec 1994', '177cm', '75kg', 'Richmond Football Club', 'Forward'
         ]
-        player = playerScrape.populate_player(test_player_row, self.headers, self.TEAM)
+        player = self.playerScrape.populate_player(test_player_row, self.headers, self.TEAM)
         self.assertIsNotNone(player)
         self.assertEqual(player.team, self.TEAM)
         self.assertEqual(player.name_key, 'jake-aarts')
@@ -112,7 +113,7 @@ class TestPlayerScrape(BaseScraperTest):
         test_player_row = [
             '16', 'micky-mick-joe', '27', '26yr 6mth', '8 Dec 1994', '177cm', '75kg', 'Richmond Football Club', 'Forward'
         ]
-        player = playerScrape.populate_player(test_player_row, self.headers, self.TEAM)
+        player = self.playerScrape.populate_player(test_player_row, self.headers, self.TEAM)
         self.assertIsNotNone(player)
         self.assertEqual(player.team, self.TEAM)
         self.assertEqual(player.name_key, 'micky-mick-joe')
@@ -124,7 +125,7 @@ class TestPlayerScrape(BaseScraperTest):
             '16', '', '27', '26yr 6mth', '8 Dec 1994', '177cm', '75kg', 'Richmond Football Club', 'Forward'
         ]
         with self.assertRaisesRegex(ValueError, 'Player row has no name') as e:
-            player = playerScrape.populate_player(test_player_row, self.headers, self.TEAM)
+            player = self.playerScrape.populate_player(test_player_row, self.headers, self.TEAM)
             self.assertIsNone(player)
 
     def test_populate_player_no_DOB(self):
@@ -132,12 +133,12 @@ class TestPlayerScrape(BaseScraperTest):
             '16', 'jake-aarts', '27', '26yr 6mth', '', '177cm', '75kg', 'Richmond Football Club', 'Forward'
         ]
         with self.assertRaisesRegex(ValueError, 'Player row has no DateOfBirth') as e:
-            player = playerScrape.populate_player(test_player_row, self.headers, self.TEAM)
+            player = self.playerScrape.populate_player(test_player_row, self.headers, self.TEAM)
             self.assertIsNone(player)
 
     def test_upsert_team_new_player(self):
         players = [self.player]
-        playerScrape.upsert_team(players, TestPlayerScrape._engine)
+        self.playerScrape.upsert_team(players, TestPlayerScrape._engine)
 
         with TestPlayerScrape.Session() as session:
             players_in_db = session.execute(select(Player).filter_by(team=self.TEAM)).all()
@@ -158,7 +159,7 @@ class TestPlayerScrape(BaseScraperTest):
             test_session.commit()
 
         players = [self.player]
-        playerScrape.upsert_team(players, TestPlayerScrape._engine)
+        self.playerScrape.upsert_team(players, TestPlayerScrape._engine)
         with TestPlayerScrape.Session() as test_session2:
             players_in_db = test_session2.execute(select(Player).filter_by(team=self.TEAM)).all()
             self.assertEqual(len(players_in_db), 1)
@@ -169,12 +170,12 @@ class TestPlayerScrape(BaseScraperTest):
             self.assertEqual(players_in_db[0][0].position, self.player.position)
 
     def test_upsert_team_exception_invalid_name_key(self):
-        players = playerScrape.process_row(self.first_row, self.headers, self.TEAM, [])
+        players = self.playerScrape.process_row(self.first_row, self.headers, self.TEAM, [])
         self.assertEqual(len(players), 43)
         invalid_player = players[17]
         invalid_player.name_key = ''
         # GIVEN we insert one bad row
-        playerScrape.upsert_team(players, TestPlayerScrape._engine)
+        self.playerScrape.upsert_team(players, TestPlayerScrape._engine)
         with TestPlayerScrape.Session() as session:
             players_in_db = session.execute(select(Player).filter_by(team=self.TEAM)).all()
             # WHEN one row fails THEN other rows should not be affected
@@ -183,7 +184,7 @@ class TestPlayerScrape(BaseScraperTest):
     def test_upsert_team_no_DOB(self):
         invalid_player = self.player
         invalid_player.DOB = None
-        playerScrape.upsert_team([invalid_player], TestPlayerScrape._engine)
+        self.playerScrape.upsert_team([invalid_player], TestPlayerScrape._engine)
         with TestPlayerScrape.Session() as session:
             players_in_db = session.execute(select(Player).filter_by(team=self.TEAM)).all()
             self.assertEqual(0, len(players_in_db))
@@ -191,15 +192,15 @@ class TestPlayerScrape(BaseScraperTest):
     def test_upsert_team_no_team(self):
         invalid_player = self.player
         invalid_player.team = None
-        playerScrape.upsert_team([invalid_player], TestPlayerScrape._engine)
+        self.playerScrape.upsert_team([invalid_player], TestPlayerScrape._engine)
         with TestPlayerScrape.Session() as session:
             players_in_db = session.execute(select(Player).filter_by(team=self.TEAM)).all()
             self.assertEqual(0, len(players_in_db))
 
     def test_upsert_team_full_team(self):
-        players = playerScrape.process_row(self.first_row, self.headers, self.TEAM, [])
+        players = self.playerScrape.process_row(self.first_row, self.headers, self.TEAM, [])
         self.assertEqual(len(players), 43)
-        playerScrape.upsert_team(players, TestPlayerScrape._engine)
+        self.playerScrape.upsert_team(players, TestPlayerScrape._engine)
         with TestPlayerScrape.Session() as test_session:
             players_in_db = test_session.execute(select(Player).filter_by(team=self.TEAM)).all()
             self.assertEqual(len(players_in_db), 43)

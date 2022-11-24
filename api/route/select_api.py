@@ -5,14 +5,15 @@ from sqlalchemy import or_
 
 from api.db import get_db_session_factory
 from api.schema.fantasy_schema import FantasySchema
-from api.schema.game_schema import GameSchema
+from api.schema.games.game_schema import GameSchema
+from api.schema.games.game_schema_match_stats import GameMatchStatsSchema
 from api.schema.match_stats_schema import MatchStatsSchema
 from api.schema.player.player_injury import PlayerInjurySchema
 from api.schema.supercoach_schema import SuperCoachSchema
 from model import Game, Player, PlayerFantasy, PlayerSupercoach, MatchStatsPlayer
 
 bp = Blueprint('select_api', __name__, url_prefix='/select')
-
+MAX_GAMES_FOR_STATS = 30
 
 @bp.route("/games")
 def select_games():
@@ -23,7 +24,11 @@ def select_games():
         if key == 'team':
             data = data.filter(or_(Game.home_team == value, Game.away_team == value))
     data = data.order_by('year', 'round_number').all()
-    schema = GameSchema(many=True)
+    includeStats = False
+    if 'includeStats' in request.args.keys():
+        if len(data) <= MAX_GAMES_FOR_STATS:
+            includeStats = True
+    schema = GameMatchStatsSchema(many=True) if includeStats else GameSchema(many=True)
     dump_data = schema.dump(data)
     return jsonify(dump_data)
 

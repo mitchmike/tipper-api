@@ -6,6 +6,9 @@
 
 {% block content %}
 <ul>
-    <li><a href="{{url_for('admin.users')}}">User Management</a></li>
+    <li><a href="{{url_for('users.users')}}">User Management</a></li>
+    <li><a href="{{url_for('scrape_api.scrape_management')}}">Datascrape Controls</a></li>
+    <li>Database Management</li>
+    <li>Model Management</li>
 </ul>
 {% endblock %}
