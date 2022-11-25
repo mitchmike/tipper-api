@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 from flask import Flask, url_for, redirect
 
-from api.route import auth, admin, select_api, scrape_api, users
+from api.route import auth, admin, select_api, scrape_api, users, db_mgmt_api, model_mgmt_api
 
 
 def create_app(test_config=None):
@@ -35,6 +35,8 @@ def create_app(test_config=None):
     app.register_blueprint(admin.bp)
     app.register_blueprint(users.bp)
     app.register_blueprint(scrape_api.bp)
+    app.register_blueprint(db_mgmt_api.bp)
+    app.register_blueprint(model_mgmt_api.bp)
 
     @app.route('/')
     def index():

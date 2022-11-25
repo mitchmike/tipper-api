@@ -23,7 +23,7 @@ def scrape_management():
     data = select_data(ScrapeEvent, ())
     data = data.order_by('start_time').limit(50).all()
     data.reverse()
-    return render_template('admin/scraper/scraper_management.html', scrape_events=data)
+    return render_template('admin/scraper_management.html', scrape_events=data)
 
 
 @bp.route("/players")
