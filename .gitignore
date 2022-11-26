@@ -4,3 +4,4 @@ __pycache__/
 tipper-api-env/
 dist/
 build/
+alchemydumps/

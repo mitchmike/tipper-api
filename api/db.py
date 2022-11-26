@@ -1,6 +1,7 @@
 import click
 from flask import current_app, g
 from flask.cli import with_appcontext
+from flask_alchemydumps import AlchemyDumps
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
@@ -16,8 +17,14 @@ def init_app(app):
 def get_db():
     if 'engine' not in g:
         g.engine = create_engine(current_app.config['SQLALCHEMY_DATABASE_URI'])
-        Base.metadata.create_all(g.engine, checkfirst=True)
+        Base.metadata.create_all(g.engine)
     return g.engine
+
+
+def get_backups(app, db):
+    if 'alchemydumps' not in g:
+        g.alchemydumps = AlchemyDumps(app, db)
+    return g.alchemydumps
 
 
 def get_db_session_factory():

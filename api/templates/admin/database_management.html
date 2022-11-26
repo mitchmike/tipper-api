@@ -1,11 +1,56 @@
 {% extends 'base.html' %}
 
 {% block header %}
-  <h1>{% block title %}Database Management{% endblock %}</h1>
+    <h1>{% block title %}Database Management{% endblock %}</h1>
 {% endblock %}
 
 {% block content %}
-<ul>
+    <form action="{{ url_for('db_mgmt_api.trigger_table_clean') }}" method="post">
+        <div>
+            <div class="form-group">
+                <input data-toggle="modal" data-target="#loadingModal" type="submit" class="btn btn-primary"
+                       value="Delete data from table">
+                <label for="table_name">Table</label>
+                <select id="table_select" name="table_name" class="form-control">
+                    <option selected>Choose...</option>
+                    <option>games_footywire</option>
+                    <option>injuries</option>
+                    <option>matchstats_player</option>
+                    <option>player_fantasy</option>
+                    <option>player_supercoach</option>
+                    <option>players</option>
+                </select>
+                <div id="yearRoundSelect">
+                    <label for="from_year">from_year</label><input type="number" name="from_year">
+                    <label for="to_year">from_year</label><input type="number" name="to_year">
+                    <label for="from_round">from_year</label><input type="number" name="from_round">
+                    <label for="to_round">from_year</label><input type="number" name="to_round">
+                </div>
+                <div id="gameIdSelect">
+                    <label for="game_id">game_id</label><input type="number" name="game_id">
+                </div>
+            </div>
+        </div>
+    </form>
 
-</ul>
+    <script>
+        $(function () {
+            $('#yearRoundSelect').hide();
+            $('#gameIdSelect').hide();
+            $('#table_select').change(function () {
+                if (['games_footywire', 'player_fantasy', 'player_supercoach'].includes($('#table_select').val())) {
+                    $('#yearRoundSelect').show();
+                } else {
+                    $('#yearRoundSelect').hide();
+                }
+                if (['games_footywire', 'matchstats_player'].includes($('#table_select').val())) {
+                    $('#gameIdSelect').show();
+                } else {
+                    $('#gameIdSelect').hide();
+                }
+            });
+        });
+    </script>
+
+
 {% endblock %}
