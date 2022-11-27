@@ -31,3 +31,6 @@ class User(Base):
                "created_at='%s', updated_at='%s')>" % (self.id, self.first_name,
                                                        self.last_name, self.email, self.roles,
                                                        self.created_at, self.updated_at)
+
+    def as_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns if c.name != 'password'}

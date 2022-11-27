@@ -43,7 +43,7 @@
         <input type="submit" formaction="{{url_for('users.update')}}" value="Update">
         <input type="submit" formaction="{{url_for('users.delete')}}" value="Delete">
         {% else %}
-        <input type="submit" formaction="{{url_for('auth.register')}}" value="Create">
+        <input type="submit" formaction="{{url_for('auth.admin_register')}}" value="Create">
         {% endif %}
     </div>
 </form>

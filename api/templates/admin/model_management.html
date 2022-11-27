@@ -1,11 +1,36 @@
 {% extends 'base.html' %}
 
 {% block header %}
-  <h1>{% block title %}Model Management{% endblock %}</h1>
+    <h1>{% block title %}Model Management{% endblock %}</h1>
 {% endblock %}
 
 {% block content %}
-<ul>
+    <ul>
 
-</ul>
+        <li><a href="{{ url_for('model_mgmt_api.get_current_models') }}">get_current_models</a><br/></li>
+        <li><a href="{{ url_for('model_mgmt_api.get_historical_models') }}">get_historical_models</a></li>
+        <li><a href="{{ url_for('model_mgmt_api.build_model') }}">build custom model</a></li>
+    </ul>
+    <table class="table table-hover">
+        <thead class="thead-dark">
+        <tr>
+            <th scope="col" style="text-align: end;">id</th>
+            <th scope="col">model_type</th>
+            <th scope="col">accuracy</th>
+            <th scope="col">active</th>
+            <th scope="col">file_name</th>
+            <th scope="col">updated_time</th>
+        </tr>
+        </thead>
+        {% for model in models %}
+            <tr>
+                <td style="text-align: end;">{{ scrape.id }}</td>
+                <td>{{ scrape.model_type }}</td>
+                <td>{{ scrape.accuracy }}</td>
+                <td>{{ scrape.active }}</td>
+                <td>{{ scrape.file_name }}</td>
+                <td>{{ scrape.updated_time }}</td>
+            </tr>
+        {% endfor %}
+    </table>
 {% endblock %}
