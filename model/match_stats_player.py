@@ -45,6 +45,39 @@ class MatchStatsPlayer(Base):
     player = relationship("Player", back_populates="match_stats_player")
     game = relationship("Game", back_populates="match_stats_player")
 
+    @staticmethod
+    def summable_cols():
+        return ['kicks',
+                'handballs',
+                'disposals',
+                'marks',
+                'goals',
+                'behinds',
+                'tackles',
+                'hit_outs',
+                'goal_assists',
+                'inside_50s',
+                'clearances',
+                'clangers',
+                'rebound_50s',
+                'frees_for',
+                'frees_against',
+                'contested_possessions',
+                'uncontested_possessions',
+                'effective_disposals',
+                'contested_marks',
+                'marks_inside_50',
+                'one_percenters',
+                'bounces',
+                'centre_clearances',
+                'stoppage_clearances',
+                'score_involvements',
+                'metres_gained',
+                'turnovers',
+                'intercepts',
+                'tackles_inside_50'
+                ]
+
     def __repr__(self):
         return "<MatchStatsPlayer(id='%s', player_id='%s', game_id='%s', team='%s', player_name='%s', kicks='%s', " \
                "handballs='%s', " \

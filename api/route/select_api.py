@@ -1,7 +1,7 @@
 from flask import (
     Blueprint, request, jsonify
 )
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 
 from api.db import get_db_session_factory
 from api.schema.fantasy_schema import FantasySchema
@@ -10,10 +10,20 @@ from api.schema.games.game_schema_match_stats import GameMatchStatsSchema
 from api.schema.match_stats_schema import MatchStatsSchema
 from api.schema.player.player_injury import PlayerInjurySchema
 from api.schema.supercoach_schema import SuperCoachSchema
+from api.schema.team_schema import TeamSchema
 from model import Game, Player, PlayerFantasy, PlayerSupercoach, MatchStatsPlayer
+from model.team import Team
 
 bp = Blueprint('select_api', __name__, url_prefix='/select')
 MAX_GAMES_FOR_STATS = 30
+
+
+@bp.route('/teams')
+def select_teams():
+    data = select_data(Team, ('team_identifier', )).all()
+    schema = TeamSchema(many=True)
+    return jsonify(schema.dump(data))
+
 
 @bp.route("/games")
 def select_games():
@@ -77,6 +87,52 @@ def select_matchstats():
     schema = MatchStatsSchema(many=True)
     dump_data = schema.dump(data)
     return jsonify(dump_data)
+
+
+@bp.route('/pcntdiff')
+def select_pcnt_diff():
+    for opt in ['team', 'year']:
+        if opt not in request.args:
+            print("required params not supplied")
+            return {}
+    try:
+        team = request.args.get('team')
+        year = request.args.get('year')
+        Session = get_db_session_factory()
+        session = Session()
+        # get game ids from games table
+        games = session.query(Game).filter(Game.year == year)\
+            .filter(or_(Game.home_team == team, Game.away_team == team)) \
+            .with_entities(Game.id, Game.year, Game.round_number).all()
+        game_ids = [game.id for game in games]
+        # get matchstats for these game ids
+        sum_cols = [func.sum(getattr(MatchStatsPlayer, i)) for i in MatchStatsPlayer.summable_cols()]
+        q = session.query(MatchStatsPlayer)\
+            .with_entities(MatchStatsPlayer.game_id, MatchStatsPlayer.team, *sum_cols) \
+            .filter(MatchStatsPlayer.game_id.in_(game_ids)) \
+            .group_by(MatchStatsPlayer.game_id, MatchStatsPlayer.team)
+        sums = q.all()
+        pcntdiffs = []
+        for game_id in game_ids:
+            teamsums = [game for game in sums if game[0] == game_id and game[1] == team]
+            opponentsums = [game for game in sums if game[0] == game_id and game[1] != team]
+            game = [game for game in games if game.id == game_id]
+            if len(teamsums) > 0 and len(opponentsums) > 0 and len(game) > 0:
+                teamsums = teamsums[0]
+                opponentsums = opponentsums[0]
+                game = game[0]
+                pcntdiff = {'game_id': game_id, 'year': game.year, 'round_number': game.round_number,
+                            'team_id': teamsums[1], 'opponent': opponentsums[1]}
+                i = 0
+                for ts, os in zip(teamsums[2:], opponentsums[2:]):
+                    pcntdiff[MatchStatsPlayer.summable_cols()[i]] = 0 if os == 0 else (ts - os) / os
+                    i += 1
+                pcntdiffs.append(pcntdiff)
+        pcntdiffs = sorted(pcntdiffs, key=lambda i: int(i['round_number']))
+        return jsonify(pcntdiffs)
+    except Exception as e:
+        print(e)
+        return {}
 
 
 def select_data(model, filters):
