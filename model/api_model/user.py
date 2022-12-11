@@ -1,8 +1,10 @@
 import datetime
 
-from sqlalchemy import Column, Integer, String, DateTime, Sequence, ARRAY
+from sqlalchemy import Column, Integer, String, DateTime, Sequence, ARRAY, ForeignKey
+from sqlalchemy.orm import relationship
 
 from model.base import Base
+from model.team import Team
 
 
 class User(Base):
@@ -15,6 +17,8 @@ class User(Base):
     roles = Column(ARRAY(String), default=ARRAY(String))
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
+    follows_team = Column(Integer, ForeignKey(Team.id))
+    user_follows_team = relationship('Team', back_populates='followers')
 
     def __init__(self, first_name, last_name, email, password):
         self.first_name = first_name

@@ -34,6 +34,11 @@ def get_db_session_factory():
     return g.Session
 
 
+def new_session():
+    Session = get_db_session_factory()
+    return Session()
+
+
 def close_db(e=None):
     g.pop('Session', None)
     engine = g.pop('engine', None)

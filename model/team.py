@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Boolean, Sequence
+from sqlalchemy.orm import relationship
 
 from model.base import Base
 
@@ -10,6 +11,7 @@ class Team(Base):
     name = Column(String)
     team_identifier = Column(String, unique=True)
     active_in_competition = Column(Boolean, default=False)
+    followers = relationship('User', back_populates='user_follows_team')
 
     def __repr__(self):
         return "<Team(id='%s', city='%s', name='%s', \

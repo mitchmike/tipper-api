@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from api import db
-from model.api_model.user import User
+from model import Team, User
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -38,13 +38,13 @@ def admin_required(view):
 @bp.before_app_request
 def load_logged_in_user():
     user_id = session.get('user_id')
-
     if user_id is None:
         g.user = None
     else:
         Session = db.get_db_session_factory()
         db_session = Session()
         g.user = db_session.query(User).filter_by(id=user_id).first()
+        db_session.close()
 
 
 @bp.route('/admin_register', methods=('GET', 'POST'))
@@ -91,6 +91,7 @@ def register(admin=False):
                             user.roles.append(role)
                 user_session.add(user)
                 user_session.commit()
+                user_session.close()
             except IntegrityError:
                 error = f"Email {email} is already registered."
             else:
@@ -119,6 +120,7 @@ def login():
     Session = db.get_db_session_factory()
     db_session = Session()
     user = db_session.query(User).filter(User.email == email).first()
+    db_session.close()
     if user is not None and check_password_hash(user.password, password):
         session.clear()
         session['user_id'] = user.id
@@ -133,3 +135,19 @@ def logout():
     return redirect(url_for('admin.index'))
 
 
+@bp.route("/user_profile", methods=('POST',))
+def user_profile():
+    user_id = request.form.get('user_id')
+    Session = db.get_db_session_factory()
+    db_session = Session()
+    user = db_session.query(User).filter_by(id=user_id).first()
+    db_session.merge(user)
+    db_session.commit()
+    # give some details about the users team preference and activity history
+    team = db_session.query(Team).filter(Team.id == user.follows_team).first()
+    db_session.close()
+    profile = {}
+    if user:
+        profile = user.as_dict()
+        profile['follows_team'] = team.team_identifier
+    return profile

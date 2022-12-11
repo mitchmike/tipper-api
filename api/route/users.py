@@ -6,6 +6,8 @@ from werkzeug.security import generate_password_hash
 
 from api import db
 from api.route.auth import admin_required
+from api.route.db_mgmt_api import safe_int
+from model import Team
 from model.api_model.user import User
 
 bp = Blueprint('users', __name__, url_prefix='/users')
@@ -63,9 +65,9 @@ def delete():
 
 
 @bp.route('/update', methods=('POST',))
-@admin_required
 def update():
-    user_id = request.form['id']
+    from_front_end = request.form.get('from_front_end', False)
+    user_id = request.form.get('id')
     if user_id is None:
         flash('User not found')
         return redirect(url_for('users'))
@@ -73,6 +75,7 @@ def update():
     last_name = request.form.get('last_name')
     password = request.form.get('password')
     re_password = request.form.get('re_password')
+    follows_team = request.form.get('follows_team', None)
     if not password == re_password:
         flash('Passwords must match')
         return redirect(url_for('users.detail', user_id=user_id))
@@ -90,15 +93,20 @@ def update():
         else:
             flash('Not authorised to change password')
             return redirect(url_for('users.detail', user_id=user_id))
-    user_roles = copy.deepcopy(user.roles)
-    for role in roles.keys():
-        # remove role from user object
-        if role in user_roles:
-            user_roles.remove(role)
-        # add if checked
-        if roles[role] == 'on':
-            user_roles.append(role)
-    user.roles = user_roles
+    if not from_front_end:
+        user_roles = copy.deepcopy(user.roles)
+        for role in roles.keys():
+            # remove role from user object
+            if role in user_roles:
+                user_roles.remove(role)
+            # add if checked
+            if roles[role] == 'on':
+                user_roles.append(role)
+        user.roles = user_roles
+    if follows_team is not None:
+        team = db_session.query(Team).filter(Team.id == safe_int(follows_team)).first()
+        if team is not None:
+            user.follows_team = team.id
     user.updated_at = datetime.datetime.now()
     db_session.add(user)
     db_session.commit()

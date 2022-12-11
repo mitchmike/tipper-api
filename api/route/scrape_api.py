@@ -1,9 +1,9 @@
 from flask import Blueprint, g, render_template, flash, redirect, url_for, request
 
 from api import db
+from api.db import new_session
 from api.route.auth import admin_required
 from api.route.db_mgmt_api import safe_int
-from api.route.select_api import select_data
 from datascrape.scrapers.fantasyScrape import FantasyScraper
 from datascrape.scrapers.gameScrape import GameScraper
 from datascrape.scrapers.injuryScrape import InjuryScraper
@@ -21,9 +21,10 @@ def load_db():
 
 @bp.route("/")
 def scrape_management():
-    data = select_data(ScrapeEvent, ())
-    data = data.order_by('start_time').limit(50).all()
-    data.reverse()
+    with new_session() as session:
+        data = session.query(ScrapeEvent)
+        data = data.order_by('start_time').limit(50).all()
+        data.reverse()
     return render_template('admin/scraper_management.html', scrape_events=data)
 
 
@@ -36,8 +37,10 @@ def trigger_scrape_players():
 @bp.route("/games")
 @admin_required
 def trigger_scrape_games():
-    from_year = request.args.get('from_year', default=2021)
-    to_year = request.args.get('to_year', default=2021)
+    from_year, to_year = get_req_params(['from_year', 'to_year'])
+    if None in [from_year, to_year]:
+        flash('Scrape not started. Must supply all fields')
+        return redirect(url_for('scrape_api.scrape_management'))
     return scrape_data(GameScraper(g.engine, int(from_year), int(to_year)))
 
 
@@ -50,24 +53,28 @@ def trigger_scrape_injuries():
 @bp.route("/fantasies")
 @admin_required
 def trigger_scrape_fantasies():
-    from_year = request.args.get('from_year', default=2021)
-    to_year = request.args.get('to_year', default=2021)
-    from_round = request.args.get('from_round', default=1)
-    to_round = request.args.get('to_round', default=1)
+    from_year, to_year, from_round, to_round = get_req_params(['from_year', 'to_year', 'from_round', 'to_round'])
+    if None in [from_year, to_year, from_round, to_round]:
+        flash('Scrape not started. Must supply all fields')
+        return redirect(url_for('scrape_api.scrape_management'))
     return scrape_data(FantasyScraper(g.engine, int(from_year), int(to_year), int(from_round), int(to_round)))
 
 
 @bp.route("/match_stats")
 @admin_required
 def trigger_scrape_match_stats():
-    from_year = safe_int(request.args.get('from_year', default=2021))
-    to_year = safe_int(request.args.get('to_year', default=2021))
-    from_round = safe_int(request.args.get('from_round', default=1))
-    to_round = safe_int(request.args.get('to_round', default=1))
+    from_year, to_year, from_round, to_round = get_req_params(['from_year', 'to_year', 'from_round', 'to_round'])
     if None in [from_year, to_year, from_round, to_round]:
         flash('Scrape not started. Must supply all fields')
         return redirect(url_for('scrape_api.scrape_management'))
     return scrape_data(MatchStatsScraper(g.engine, from_year, to_year, from_round, to_round))
+
+
+def get_req_params(params):
+    result = []
+    for param in params:
+        result.append(safe_int(request.args.get(param)))
+    return result
 
 
 def scrape_data(clazz):
