@@ -13,7 +13,6 @@ from api.schema.supercoach_schema import SuperCoachSchema
 from api.schema.team_schema import TeamSchema
 from model import Game, Player, PlayerFantasy, PlayerSupercoach, MatchStatsPlayer, Team
 
-
 bp = Blueprint('select_api', __name__, url_prefix='/select')
 MAX_GAMES_FOR_STATS = 30
 
@@ -100,14 +99,18 @@ def select_pcnt_diff():
         if opt not in request.args:
             print("required params not supplied")
             return {}
-    session = new_session()
+    team = request.args.get('team')
+    year = request.args.get('year')
+    with new_session() as session:
+        return jsonify(get_pcnt_diff(session, team, year))
+
+
+def get_pcnt_diff(session, team, year):
     try:
-        team = request.args.get('team')
-        year = request.args.get('year')
         # get game ids from games table
         games = session.query(Game).filter(Game.year == year) \
             .filter(or_(Game.home_team == team, Game.away_team == team)) \
-            .with_entities(Game.id, Game.year, Game.round_number).all()
+            .with_entities(Game.id, Game.year, Game.round_number, Game.home_team, Game.away_team, Game.winner).all()
         game_ids = [game.id for game in games]
         # get matchstats for these game ids
         sum_cols = [func.sum(getattr(MatchStatsPlayer, i)) for i in MatchStatsPlayer.summable_cols()]
@@ -126,19 +129,19 @@ def select_pcnt_diff():
                 opponentsums = opponentsums[0]
                 game = game[0]
                 pcntdiff = {'game_id': game_id, 'year': game.year, 'round_number': game.round_number,
-                            'team_id': teamsums[1], 'opponent': opponentsums[1]}
+                            'team_id': teamsums.team, 'opponent': opponentsums.team,
+                            'home_game': 1 if teamsums.team == game.home_team else 0,
+                            'win': 1 if teamsums.team == game.winner else 0}
                 i = 0
                 for ts, os in zip(teamsums[2:], opponentsums[2:]):
                     pcntdiff[MatchStatsPlayer.summable_cols()[i]] = 0 if os == 0 else (ts - os) / os
                     i += 1
                 pcntdiffs.append(pcntdiff)
         pcntdiffs = sorted(pcntdiffs, key=lambda i: int(i['round_number']))
-        return jsonify(pcntdiffs)
+        return pcntdiffs
     except Exception as e:
         print(e)
         return {}
-    finally:
-        session.close()
 
 
 def select_data(session, model, filters):
