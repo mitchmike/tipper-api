@@ -102,13 +102,13 @@ def select_pcnt_diff():
     team = request.args.get('team')
     year = request.args.get('year')
     with new_session() as session:
-        return jsonify(get_pcnt_diff(session, team, year))
+        return jsonify(get_pcnt_diff(session, team, [year]))
 
 
-def get_pcnt_diff(session, team, year):
+def get_pcnt_diff(session, team, years):
     try:
         # get game ids from games table
-        games = session.query(Game).filter(Game.year == year) \
+        games = session.query(Game).filter(Game.year.in_(years)) \
             .filter(or_(Game.home_team == team, Game.away_team == team)) \
             .with_entities(Game.id, Game.year, Game.round_number, Game.home_team, Game.away_team, Game.winner).all()
         game_ids = [game.id for game in games]
@@ -128,10 +128,15 @@ def get_pcnt_diff(session, team, year):
                 teamsums = teamsums[0]
                 opponentsums = opponentsums[0]
                 game = game[0]
+                col_offset = 2  # game_id and teamname cols
+                goals_i = MatchStatsPlayer.summable_cols().index('goals') + col_offset
+                behinds_i = MatchStatsPlayer.summable_cols().index('behinds') + col_offset
+                score = teamsums[goals_i] * 6 + teamsums[behinds_i]
                 pcntdiff = {'game_id': game_id, 'year': game.year, 'round_number': game.round_number,
                             'team_id': teamsums.team, 'opponent': opponentsums.team,
                             'home_game': 1 if teamsums.team == game.home_team else 0,
-                            'win': 1 if teamsums.team == game.winner else 0}
+                            'win': 1 if teamsums.team == game.winner else 0,
+                            'score': score}
                 i = 0
                 for ts, os in zip(teamsums[2:], opponentsums[2:]):
                     pcntdiff[MatchStatsPlayer.summable_cols()[i]] = 0 if os == 0 else (ts - os) / os
