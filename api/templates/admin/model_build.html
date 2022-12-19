@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}Build Model{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+    <form method="post" autocomplete="off">
+        <input autocomplete="false" name="hidden" type="text" style="display:none;">
+        <table class="table table-hover">
+            <tr>
+                <td>
+                    <div class="row">
+                        <legend class="col-form-label col-sm-2 pt-0">model_type</legend>
+                        <div class="col-sm"><input name="model_type" type="text" id="model_type"
+                                                   value="LinearRegression"/></div>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div class="row">
+                        <legend class="col-form-label col-sm-2 pt-0">model_strategy</legend>
+                        <div class="col-sm"><input name="model_strategy" type="text" id="model_strategy"
+                                                   value="pcnt_diff"/></div>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <fieldset class="form-group">
+                        <div class="row">
+                            <legend class="col-form-label col-sm-2 pt-0">Features</legend>
+                            <div class="col-sm">
+                                {% for feature in features %}
+                                    <div class="form-check form-check-inline">
+                                        {% if feature in selected_features %}
+                                            <input checked class="form-check-input feature-check" name="feature"
+                                                   type="checkbox"
+                                                   value="{{ feature }}" id="{{ feature }}">
+                                        {% else %}
+                                            <input class="form-check-input feature-check" name="feature" type="checkbox"
+                                                   value="{{ feature }}" id="{{ feature }}">
+                                        {% endif %}
+                                        <label class="form-check-label" for="{{ feature }}">
+                                            {{ feature }}
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                                <br/>
+                                <button type="button" id="selectAllBtn" class="btn btn-info">Select all</button>
+                                <button type="button" id="selectNoneBtn" class="btn btn-info">Select none</button>
+                            </div>
+                        </div>
+                    </fieldset>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div class="row">
+                        <legend class="col-form-label col-sm-2 pt-0">target_variable</legend>
+                        <div class="col-sm"><input name="target_variable" type="text" id="target_variable"
+                                                   value="score"/></div>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div class="row">
+                        <legend class="col-form-label col-sm-2 pt-0"></legend>
+                        <div class="col-sm"><input class="btn btn-info" type="submit"
+                                                   formaction="{{ url_for('model_mgmt_api.build_model') }}"
+                                                   value="Build"></div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        <div>
+
+        </div>
+    </form>
+    <script>
+        $('#selectAllBtn').click(function () {
+            $('.feature-check').attr('checked', true)
+        })
+        $('#selectNoneBtn').click(function () {
+            $('.feature-check').attr('checked', false)
+        })
+
+
+    </script>
+{% endblock %}

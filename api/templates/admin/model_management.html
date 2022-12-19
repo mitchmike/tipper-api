@@ -16,20 +16,24 @@
         <tr>
             <th scope="col" style="text-align: end;">id</th>
             <th scope="col">model_type</th>
-            <th scope="col">accuracy</th>
+            <th scope="col">model_strategy</th>
+            <th scope="col">features</th>
+            <th scope="col">target variable</th>
+            <th scope="col">score</th>
             <th scope="col">active</th>
-            <th scope="col">file_name</th>
-            <th scope="col">updated_time</th>
+            <th scope="col">created_at</th>
         </tr>
         </thead>
         {% for model in models %}
             <tr>
-                <td style="text-align: end;">{{ scrape.id }}</td>
-                <td>{{ scrape.model_type }}</td>
-                <td>{{ scrape.accuracy }}</td>
-                <td>{{ scrape.active }}</td>
-                <td>{{ scrape.file_name }}</td>
-                <td>{{ scrape.updated_time }}</td>
+                <td style="text-align: end;">{{ model.id }}</td>
+                <td>{{ model.model_type }}</td>
+                <td>{{ model.model_strategy }}</td>
+                <td>{{ model.features }}</td>
+                <td>{{ model.target_variable }}</td>
+                <td>{{ model.score }}</td>
+                <td>{{ model.active }}</td>
+                <td>{{ model.created_at }}</td>
             </tr>
         {% endfor %}
     </table>

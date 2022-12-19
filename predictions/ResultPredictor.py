@@ -58,7 +58,7 @@ class ResultPredictor:
                     LOGGER.error(e.strerror)
         if model is None:
             # TODO as last resort, build a new model (warn user of time required?)
-            model = ModelBuilder(self.session, "LinearRegression", self.features, self.target_variable).build()
+            model = ModelBuilder(self.session, "LinearRegression", "pcnt_diff", self.features, self.target_variable).build()
             new_model = True
         if model is not None:
             t = model.predict(X_team.append(X_team.agg(['mean'])).loc[['mean']])[0]

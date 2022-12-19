@@ -38,7 +38,7 @@ def scores_for_different_feature_counts():
             skip = round(random() * step)
             index = index + skip
             features = combos[index]
-            score = ModelBuilder(session, "LinearRegression", list(features), 'score').build()
+            score = ModelBuilder(session, "LinearRegression", "pcnt_diff", list(features), 'score').build()
             scores.append(score)
         avg_score = sum(scores) / samplesize
         result = {

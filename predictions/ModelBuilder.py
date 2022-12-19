@@ -26,9 +26,10 @@ LOGGER = logging.getLogger(__name__)
 class ModelBuilder:
 
     # TODO different strategies for diff modeltypes etc.
-    def __init__(self, session, modelType, fields, target_variable):
-        self.session = session
-        self.modelType = modelType
+    def __init__(self, db_session, model_type, model_strategy, fields, target_variable):
+        self.session = db_session
+        self.model_type = model_type
+        self.model_strategy = model_strategy
         self.features = fields
         self.target_variable = target_variable
 
@@ -47,12 +48,19 @@ class ModelBuilder:
             lm = LinearRegression()
             lm.fit(X_train, y_train)
             model_record = MLModel()
-            model_record.model_type = self.modelType
-            model_record.model_strategy = "pcnt_diff"
+            model_record.model_type = self.model_type
+            model_record.model_strategy = self.model_strategy
             model_record.features = sorted(self.features)
             model_record.target_variable = self.target_variable
-            model_record.active = True  # TODO replace previously active model when creating new one
+            model_record.active = True
             model_record.created_at = datetime.now()
+            # replace previously active model when creating new one
+            existing = self.session.query(MLModel).filter(MLModel.model_type == model_record.model_type,
+                                                          MLModel.model_strategy == model_record.model_strategy,
+                                                          MLModel.features == model_record.features,
+                                                          MLModel.target_variable == model_record.target_variable).all()
+            for m in existing:
+                m.active = False  # TODO should we delete the file here as well?
             self.analyse(lm, X_test, y_test, model_record)
             self.save_to_file(lm, model_record)
             self.save_to_db(model_record)
@@ -60,6 +68,7 @@ class ModelBuilder:
         except Exception as e:
             LOGGER.error(e)
             LOGGER.error(traceback.format_exc())
+            return None
         finally:
             self.session.close()
 
@@ -70,7 +79,8 @@ class ModelBuilder:
     def save_to_file(self, model, model_record):
         ts = time.time_ns()
         # TODO fix up file path
-        file_name = 'G:\\Code\\Tiplos\\tipper-api\\predictions\\model_files\\' + self.modelType + "_" + str(ts) + ".sav"
+        file_name = 'G:\\Code\\Tiplos\\tipper-api\\predictions\\model_files\\' + self.model_type + "_" + str(
+            ts) + ".sav"
         LOGGER.info(f'saving to file {file_name}')
         joblib.dump(model, file_name)
         model_record.file_name = file_name
@@ -128,5 +138,5 @@ if __name__ == '__main__':
     Session = sessionmaker(bind=db_engine)
     session = Session()
     all_features = ModelBuilder.available_features()
-    ModelBuilder(session, "LinearRegression", list(all_features), 'score').build()
+    ModelBuilder(session, "LinearRegression", "pdnt_diff", list(all_features), 'score').build()
     LOGGER.info(f'Total time taken: {datetime.now() - start_all}')
