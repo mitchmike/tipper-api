@@ -19,6 +19,7 @@ class User(Base):
     updated_at = Column(DateTime, nullable=False)
     follows_team = Column(Integer, ForeignKey(Team.id))
     user_follows_team = relationship('Team', back_populates='followers')
+    prediction_for_user = relationship('Prediction', back_populates='prediction_for_user')
 
     def __init__(self, first_name, last_name, email, password):
         self.first_name = first_name

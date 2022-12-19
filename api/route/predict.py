@@ -12,20 +12,22 @@ DEFAULT_FEATURES = sorted(
 
 @bp.route('/', methods=('GET', 'POST'))
 def predict():
+    user_id = None
     if request.method == 'GET':
         team = request.args.get('team')
         opp = request.args.get('opp')
         model_features = DEFAULT_FEATURES
         target_variable = request.args.get('target_var', 'score')
     else:
+        user_id = request.form.get('user_id')
         team = request.form.get('team')
         opp = request.form.get('opp')
         model_features = request.form.getlist('model_features')
         target_variable = request.form.get('target_variable', 'score')
     if team is None or opp is None or model_features is None:
         return None
-    with new_session() as session:
-        predictor = ResultPredictor(session, team, opp,
+    with new_session() as db_session:
+        predictor = ResultPredictor(db_session, user_id, team, opp,
                                     'LinearRegression', 'pcnt_diff',
                                     model_features,
                                     target_variable,

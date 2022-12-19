@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime, Sequence, ARRAY, Float, Boolean, JSON
+from sqlalchemy.orm import relationship
 
 from model.base import Base
 
@@ -15,6 +16,7 @@ class MLModel(Base):
     file_name = Column(String, unique=True)
     created_at = Column(DateTime, nullable=False)
     active = Column(Boolean, nullable=False)
+    prediction_for_model = relationship('Prediction', back_populates='prediction_for_model')
 
     def __repr__(self):
         return "<MLModel(id='%s', model_type='%s', model_strategy='%s', " \

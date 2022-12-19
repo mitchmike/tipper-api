@@ -24,7 +24,7 @@ def model_mgmt_home():
     return render_template("admin/model_management.html", models=models)
 
 
-# TODO add an endpoint to trigger manually rebuild of all major models
+# TODO add an endpoint to trigger manual rebuild of all major models
 
 @bp.route("/previous_models")
 @admin_required
