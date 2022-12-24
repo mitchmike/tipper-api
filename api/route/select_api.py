@@ -1,9 +1,10 @@
 from flask import (
     Blueprint, request, jsonify
 )
-from sqlalchemy import or_, func
+from sqlalchemy import or_, desc
 
 from api.db import new_session
+from api.route.db_mgmt_api import safe_int
 from api.schema.fantasy_schema import FantasySchema
 from api.schema.games.game_schema import GameSchema
 from api.schema.games.game_schema_match_stats import GameMatchStatsSchema
@@ -12,6 +13,7 @@ from api.schema.player.player_injury import PlayerInjurySchema
 from api.schema.supercoach_schema import SuperCoachSchema
 from api.schema.team_schema import TeamSchema
 from model import Game, Player, PlayerFantasy, PlayerSupercoach, MatchStatsPlayer, Team
+from predictions.aggregated_match_stats import get_pcnt_diff, ALL_ROUNDS
 
 bp = Blueprint('select_api', __name__, url_prefix='/select')
 MAX_GAMES_FOR_STATS = 30
@@ -25,6 +27,22 @@ def select_teams():
         return jsonify(schema.dump(data))
 
 
+@bp.route("/recent_year_rounds")
+def recent_year_rounds():
+    lastXRounds = request.args.get('lastXRounds')
+    tuples = [(t[0], t[1]) for t in get_recent_year_rounds(lastXRounds)]
+    return jsonify(tuples)
+
+
+def get_recent_year_rounds(lastXRounds):
+    with new_session() as session:
+        year_rounds = session.query(Game).with_entities(Game.year, Game.round_number) \
+            .group_by(Game.year, Game.round_number) \
+            .order_by(desc(Game.year), desc(Game.round_number)) \
+            .limit(lastXRounds).all()
+    return year_rounds
+
+
 @bp.route("/games")
 def select_games():
     with new_session() as session:
@@ -34,6 +52,10 @@ def select_games():
             value = request.args.get(key)
             if key == 'team':
                 data = data.filter(or_(Game.home_team == value, Game.away_team == value))
+            if key == 'lastXRounds':
+                last_x_games = get_recent_year_rounds(value)
+                earliest = last_x_games[-1]
+                data = data.filter(Game.year >= earliest[0], Game.round_number >= earliest[1])
         data = data.order_by('year', 'round_number').all()
         includeStats = False
         if 'includeStats' in request.args.keys():
@@ -100,53 +122,9 @@ def select_pcnt_diff():
             print("required params not supplied")
             return {}
     team = request.args.get('team')
-    year = request.args.get('year')
+    year = safe_int(request.args.get('year'))
     with new_session() as session:
-        return jsonify(get_pcnt_diff(session, team, [year]))
-
-
-def get_pcnt_diff(session, team, years):
-    try:
-        # get game ids from games table
-        games = session.query(Game).filter(Game.year.in_(years)) \
-            .filter(or_(Game.home_team == team, Game.away_team == team)) \
-            .with_entities(Game.id, Game.year, Game.round_number, Game.home_team, Game.away_team, Game.winner).all()
-        game_ids = [game.id for game in games]
-        # get matchstats for these game ids
-        sum_cols = [func.sum(getattr(MatchStatsPlayer, i)) for i in MatchStatsPlayer.summable_cols()]
-        stats_q = session.query(MatchStatsPlayer) \
-            .with_entities(MatchStatsPlayer.game_id, MatchStatsPlayer.team, *sum_cols) \
-            .filter(MatchStatsPlayer.game_id.in_(game_ids)) \
-            .group_by(MatchStatsPlayer.game_id, MatchStatsPlayer.team)
-        sums = stats_q.all()
-        pcntdiffs = []
-        for game_id in game_ids:
-            teamsums = [game for game in sums if game[0] == game_id and game[1] == team]
-            opponentsums = [game for game in sums if game[0] == game_id and game[1] != team]
-            game = [game for game in games if game.id == game_id]
-            if len(teamsums) > 0 and len(opponentsums) > 0 and len(game) > 0:
-                teamsums = teamsums[0]
-                opponentsums = opponentsums[0]
-                game = game[0]
-                col_offset = 2  # game_id and teamname cols
-                goals_i = MatchStatsPlayer.summable_cols().index('goals') + col_offset
-                behinds_i = MatchStatsPlayer.summable_cols().index('behinds') + col_offset
-                score = teamsums[goals_i] * 6 + teamsums[behinds_i]
-                pcntdiff = {'game_id': game_id, 'year': game.year, 'round_number': game.round_number,
-                            'team_id': teamsums.team, 'opponent': opponentsums.team,
-                            'home_game': 1 if teamsums.team == game.home_team else 0,
-                            'win': 1 if teamsums.team == game.winner else 0,
-                            'score': score}
-                i = 0
-                for ts, os in zip(teamsums[2:], opponentsums[2:]):
-                    pcntdiff[MatchStatsPlayer.summable_cols()[i]] = 0 if os == 0 else (ts - os) / os
-                    i += 1
-                pcntdiffs.append(pcntdiff)
-        pcntdiffs = sorted(pcntdiffs, key=lambda i: int(i['round_number']))
-        return pcntdiffs
-    except Exception as e:
-        print(e)
-        return {}
+        return jsonify(get_pcnt_diff(session, team, [(year, ALL_ROUNDS)]))
 
 
 def select_data(session, model, filters):

@@ -1,4 +1,5 @@
 from flask import Blueprint, g, render_template, flash, redirect, url_for, request
+from sqlalchemy import desc
 
 from api import db
 from api.db import new_session
@@ -23,8 +24,7 @@ def load_db():
 def scrape_management():
     with new_session() as session:
         data = session.query(ScrapeEvent)
-        data = data.order_by('start_time').limit(50).all()
-        data.reverse()
+        data = data.order_by(desc('start_time')).limit(50).all()
     return render_template('admin/scraper_management.html', scrape_events=data)
 
 

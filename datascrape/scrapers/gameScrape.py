@@ -19,10 +19,10 @@ LOGGER = logging.getLogger(__name__)
 
 FINAL_ROUNDS = {
     'qualifying final': 50,
-    'elimination final': 51,
-    'semi final': 52,
-    'preliminary final': 53,
-    'grand final': 54
+    'elimination final': 50,
+    'semi final': 51,
+    'preliminary finals': 52,
+    'grand final': 53
 }
 
 

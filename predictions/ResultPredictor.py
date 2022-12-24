@@ -5,11 +5,11 @@ import joblib
 import pandas as pd
 from flask import json
 
-from api.route.select_api import get_pcnt_diff
 from api.schema.prediction_schema import PredictionSchema
 from datascrape.logging_config import LOGGING_CONFIG
 from model import MLModel, Prediction
 from predictions.ModelBuilder import ModelBuilder
+from predictions.aggregated_match_stats import get_pcnt_diff, ALL_ROUNDS
 
 logging.config.dictConfig(LOGGING_CONFIG)
 LOGGER = logging.getLogger(__name__)
@@ -17,8 +17,7 @@ LOGGER = logging.getLogger(__name__)
 
 class ResultPredictor:
 
-    def __init__(self, session, user_id, team, opponent, model_type, model_strategy, features, target_variable, weightings,
-                 round_numbers):
+    def __init__(self, session, user_id, team, opponent, model_type, model_strategy, features, target_variable):
         self.session = session
         self.user_id = user_id
         self.team = team
@@ -28,15 +27,18 @@ class ResultPredictor:
         self.features = features
         self.target_variable = target_variable
         self.weightings = []  # TODO
-        self.round_numbers = []  # TODO
 
-    def get_prediction(self):
+    def get_prediction(self, team_year_rounds, opp_year_rounds):
+        default_yrs = [(datetime.datetime.now().year, ALL_ROUNDS)]
+        team_year_rounds = team_year_rounds if len(team_year_rounds) > 0 else default_yrs
+        opp_year_rounds = opp_year_rounds if len(opp_year_rounds) > 0 else default_yrs
+
         # TODO check cache for matching prediction
 
         # build pcnt diff dataset for prediction
-        # TODO consider player lists, rounds used, weightings
-        team_data = get_pcnt_diff(self.session, self.team, [2022])
-        opp_data = get_pcnt_diff(self.session, self.opponent, [2022])
+        # TODO consider player lists, weightings
+        team_data = get_pcnt_diff(self.session, self.team, team_year_rounds)
+        opp_data = get_pcnt_diff(self.session, self.opponent, opp_year_rounds)
         df_team = pd.read_json(json.dumps(team_data))
         df_opp = pd.read_json(json.dumps(opp_data))
         X_team = df_team[self.features]
@@ -49,7 +51,6 @@ class ResultPredictor:
             file = model_record.file_name
             if file is not None:
                 try:
-                    # TODO cleanup
                     model = joblib.load(file)  # TODO - file path fixup
                 except FileNotFoundError as e:
                     LOGGER.error(e.strerror)

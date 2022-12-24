@@ -17,7 +17,7 @@ from sklearn.linear_model import LinearRegression
 from datascrape.logging_config import LOGGING_CONFIG
 from model import Team, MLModel, MatchStatsPlayer
 from model.base import Base
-from api.route.select_api import get_pcnt_diff
+from predictions.aggregated_match_stats import get_pcnt_diff, ALL_ROUNDS
 
 logging.config.dictConfig(LOGGING_CONFIG)
 LOGGER = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ class ModelBuilder:
         try:
             teams = self.session.query(Team).all()
             for team in teams:
-                for game in get_pcnt_diff(self.session, team.team_identifier, [2021, 2022]):
+                for game in get_pcnt_diff(self.session, team.team_identifier, [(2021, ALL_ROUNDS), (2022, ALL_ROUNDS)]):
                     data.append(game)
             df = pd.read_json(json.dumps(data))
             X = df[self.features]
