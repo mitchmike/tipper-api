@@ -8,6 +8,7 @@ backcall==0.2.0
 beautifulsoup4==4.10.0
 bleach==5.0.1
 bs4==0.0.1
+cachelib==0.9.0
 certifi==2021.10.8
 cffi==1.15.1
 charset-normalizer==2.0.10
@@ -24,7 +25,7 @@ executing==1.2.0
 fastjsonschema==2.16.2
 flasgger==0.9.5
 Flask==2.2.2
-flask-alchemydumps==0.0.13
+Flask-Caching==2.0.2
 flask-marshmallow==0.14.0
 Flask-SQLAlchemy==2.5.1
 fonttools==4.38.0

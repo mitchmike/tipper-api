@@ -1,7 +1,6 @@
 import click
 from flask import current_app, g
 from flask.cli import with_appcontext
-from flask_alchemydumps import AlchemyDumps
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
@@ -9,40 +8,41 @@ from model.base import Base
 
 
 def init_app(app):
-    app.teardown_appcontext(close_db)
+    app.teardown_appcontext(teardown_db)
     app.cli.add_command(init_db_command)
-    get_db()
+    init_db()
+
+
+def init_db():
+    engine = create_engine(current_app.config['SQLALCHEMY_DATABASE_URI'])
+    Base.metadata.create_all(engine)
 
 
 def get_db():
     if 'engine' not in g:
         g.engine = create_engine(current_app.config['SQLALCHEMY_DATABASE_URI'])
-        Base.metadata.create_all(g.engine)
     return g.engine
 
 
-def get_backups(app, db):
-    if 'alchemydumps' not in g:
-        g.alchemydumps = AlchemyDumps(app, db)
-    return g.alchemydumps
-
-
 def get_db_session_factory():
-    if 'Session' not in g:
+    if 'session_maker' not in g:
         engine = get_db()
-        g.Session = sessionmaker(bind=engine)
-    return g.Session
+        g.session_maker = sessionmaker(bind=engine)
+    return g.session_maker
 
 
 def new_session():
-    Session = get_db_session_factory()
-    return Session()
+    if 'session' not in g:
+        session_maker = get_db_session_factory()
+        g.session = session_maker()
+    return g.session
 
 
-def close_db(e=None):
-    g.pop('Session', None)
+def teardown_db(e=None):
+    session = g.pop('session', None)
     engine = g.pop('engine', None)
-
+    if session is not None:
+        session.close()
     if engine is not None:
         engine.dispose()
 
@@ -51,5 +51,5 @@ def close_db(e=None):
 @with_appcontext
 def init_db_command():
     """Create new tables if not existing"""
-    get_db()
+    init_db()
     click.echo('Initialized the database.')

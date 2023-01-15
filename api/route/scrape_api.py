@@ -1,7 +1,6 @@
-from flask import Blueprint, g, render_template, flash, redirect, url_for, request
+from flask import Blueprint, render_template, flash, redirect, url_for, request, g
 from sqlalchemy import desc
 
-from api import db
 from api.db import new_session
 from api.route.auth import admin_required
 from api.route.db_mgmt_api import safe_int
@@ -15,12 +14,8 @@ from model.scrape_event import ScrapeEvent
 bp = Blueprint('scrape_api', __name__, url_prefix='/scrape')
 
 
-@bp.before_app_request
-def load_db():
-    db.get_db()
-
-
 @bp.route("/")
+@admin_required
 def scrape_management():
     with new_session() as session:
         data = session.query(ScrapeEvent)

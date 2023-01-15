@@ -13,24 +13,24 @@ bp = Blueprint('auth', __name__, url_prefix='/auth')
 # decorator for views requiring login
 def login_required(view):
     @functools.wraps(view)
-    def wrapped_view(**kwargs):
+    def wrapped_view(*args, **kwargs):
         if g.user is None:
-            return redirect(url_for('auth.admin_login'))
+            return redirect(url_for('auth.admin_login', next=request.url))
 
-        return view(**kwargs)
+        return view(*args, **kwargs)
 
     return wrapped_view
 
 
 def admin_required(view):
     @functools.wraps(view)
-    def wrapped_view(**kwargs):
+    def wrapped_view(*args, **kwargs):
         if g.user is None:
-            return redirect(url_for('auth.admin_login'))
+            return redirect(url_for('auth.admin_login', next=request.url))
         if 'ROOT' not in g.user.roles and 'ADMIN' not in g.user.roles:
             flash("admin rights required")
-            return redirect(url_for('admin.index'))
-        return view(**kwargs)
+            return redirect(request.referrer)
+        return view(*args, **kwargs)
 
     return wrapped_view
 
@@ -41,8 +41,7 @@ def load_logged_in_user():
     if user_id is None:
         g.user = None
     else:
-        Session = db.get_db_session_factory()
-        db_session = Session()
+        db_session = db.new_session()
         g.user = db_session.query(User).filter_by(id=user_id).first()
         db_session.close()
 
@@ -105,9 +104,14 @@ def register(admin=False):
 
 @bp.route('/admin_login', methods=('GET', 'POST'))
 def admin_login():
+    if request.method == 'GET':
+        session['next'] = request.args.get('next', None)
     if request.method == 'POST':
+        next_url = session.get('next')
         user = login()
         if 'id' in user:
+            if next_url is not None:
+                return redirect(next_url)
             return redirect(url_for('admin.index'))
         flash('Login failed')
     return render_template('auth/login.html')

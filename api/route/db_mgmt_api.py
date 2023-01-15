@@ -10,6 +10,7 @@ bp = Blueprint('db_mgmt_api', __name__, url_prefix='/database')
 
 
 @bp.route("/")
+@admin_required
 def db_mgmt_home():
     return render_template("admin/database_management.html")
 

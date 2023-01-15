@@ -2,6 +2,7 @@ from flask import jsonify, Blueprint, request
 
 from api.db import new_session
 from api.route.db_mgmt_api import safe_int
+from api.services.cache import cached
 from predictions.ModelBuilder import ModelBuilder
 from predictions.ResultPredictor import ResultPredictor
 
@@ -12,6 +13,7 @@ DEFAULT_FEATURES = sorted(
 
 
 @bp.route('/', methods=('GET', 'POST'))
+@cached()
 def predict():
     user_id = None
     if request.method == 'GET':

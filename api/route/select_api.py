@@ -1,7 +1,7 @@
 from flask import (
     Blueprint, request, jsonify
 )
-from sqlalchemy import or_, desc
+from sqlalchemy import or_, desc, and_
 
 from api.db import new_session
 from api.route.db_mgmt_api import safe_int
@@ -55,7 +55,7 @@ def select_games():
             if key == 'lastXRounds':
                 last_x_games = get_recent_year_rounds(value)
                 earliest = last_x_games[-1]
-                data = data.filter(Game.year >= earliest[0], Game.round_number >= earliest[1])
+                data = data.filter(or_(Game.year > earliest[0], and_(Game.year == earliest[0], Game.round_number >= earliest[1])))
         data = data.order_by('year', 'round_number').all()
         includeStats = False
         if 'includeStats' in request.args.keys():

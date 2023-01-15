@@ -1,9 +1,9 @@
 import os
 from dotenv import load_dotenv
-
 from flask import Flask, url_for, redirect
 
 from api.route import auth, admin, select_api, scrape_api, users, db_mgmt_api, model_mgmt_api, ladder, predict
+from api.services.cache import cache
 
 
 def create_app(test_config=None):
@@ -39,6 +39,8 @@ def create_app(test_config=None):
     app.register_blueprint(model_mgmt_api.bp)
     app.register_blueprint(ladder.bp)
     app.register_blueprint(predict.bp)
+
+    cache.init_app(app, config=app.config)
 
     @app.route('/')
     def index():

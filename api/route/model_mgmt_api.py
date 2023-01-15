@@ -17,6 +17,7 @@ bp = Blueprint('model_mgmt_api', __name__, url_prefix='/model')
 
 
 @bp.route("/")
+@admin_required
 def model_mgmt_home():
     # populate a table of existing models and their properties
     # TODO add button to set model as active
@@ -30,7 +31,7 @@ def model_mgmt_home():
 @admin_required
 def get_historical_models():
     # get previous models of a given type
-    # select by date range, accuracy levels etc.
+    # TODO select by date range, accuracy levels etc.
     with new_session() as session:
         models = session.query(MLModel).order_by(desc(MLModel.created_at)).limit(50).all()
     return render_template("admin/model_management.html", models=models)

@@ -5,6 +5,8 @@ class Config:
     ENV_NAME = 'NONE'
     SECRET_KEY = os.getenv("SECRET_KEY", "this-is-the-default-key")
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL',)
+    CACHE_TYPE = "SimpleCache"
+    CACHE_DEFAULT_TIMEOUT = 300
 
 
 class ProductionConfig(Config):

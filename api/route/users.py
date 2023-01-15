@@ -65,6 +65,7 @@ def delete():
 
 
 @bp.route('/update', methods=('POST',))
+@admin_required
 def update():
     from_front_end = request.form.get('from_front_end', False)
     user_id = request.form.get('id')
