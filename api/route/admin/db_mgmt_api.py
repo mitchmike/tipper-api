@@ -4,6 +4,7 @@ from flask import Blueprint, render_template, request, flash, redirect, url_for
 
 from api.db import get_db_session_factory
 from api.route.auth import admin_required
+from api.services.utils import safe_int
 from model import Injury, PlayerFantasy, Player, PlayerSupercoach, MatchStatsPlayer, Game
 
 bp = Blueprint('db_mgmt_api', __name__, url_prefix='/database')
@@ -50,13 +51,13 @@ def trigger_table_clean():
         except Exception as e:
             print(e)
             flash(f'Exception occured whilst processing request - no data was deleted')
-            return redirect(url_for('db_mgmt_api.db_mgmt_home'))
+            return redirect(url_for('admin.db_mgmt_api.db_mgmt_home'))
         rows = data.delete()
         session.commit()
         flash(f'{rows} rows deleted')
     else:
         flash(f'Invalid table selected. Not doing anything')
-    return redirect(url_for('db_mgmt_api.db_mgmt_home'))
+    return redirect(url_for('admin.db_mgmt_api.db_mgmt_home'))
 
 
 @bp.route("/backup_table")
@@ -96,15 +97,6 @@ def apply_range_filter(data, model, field_name, value, is_lower_bound):
         return data.filter(getattr(model, field_name) >= value)
     else:
         return data.filter(getattr(model, field_name) <= value)
-
-
-def safe_int(value):
-    if value is None:
-        return None
-    try:
-        return int(value)
-    except:
-        return None
 
 
 # [model, {filterType: field_name}]

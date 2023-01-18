@@ -6,7 +6,7 @@ from werkzeug.security import generate_password_hash
 
 from api import db
 from api.route.auth import admin_required
-from api.route.db_mgmt_api import safe_int
+from api.route.admin.db_mgmt_api import safe_int
 from model import Team
 from model.api_model.user import User
 
@@ -29,7 +29,7 @@ def detail():
     user_id = request.args.get('user_id')
     if user_id is None:
         flash('User not found')
-        return redirect(url_for('users.users'))
+        return redirect(url_for('admin.users.users'))
     Session = db.get_db_session_factory()
     db_session = Session()
     user = db_session.query(User).filter_by(id=user_id).first()
@@ -49,19 +49,19 @@ def delete():
     user_id = request.form['id']
     if user_id is None:
         flash('User not found')
-        return redirect(url_for('users.users'))
+        return redirect(url_for('admin.users.users'))
     Session = db.get_db_session_factory()
     db_session = Session()
     user = db_session.query(User).filter_by(id=user_id).first()
     roles = user.roles or []
     if 'ROOT' in roles:
         flash('Cannot delete master root account')
-        return redirect(url_for('users.detail', user_id=user.id))
+        return redirect(url_for('admin.users.detail', user_id=user.id))
     db_session.delete(user)
     db_session.commit()
     db_session.close()
     flash('User deleted')
-    return redirect(url_for('users.users'))
+    return redirect(url_for('admin.users.users'))
 
 
 @bp.route('/update', methods=('POST',))
@@ -71,7 +71,7 @@ def update():
     user_id = request.form.get('id')
     if user_id is None:
         flash('User not found')
-        return redirect(url_for('users'))
+        return redirect(url_for('admin.users'))
     first_name = request.form.get('first_name')
     last_name = request.form.get('last_name')
     password = request.form.get('password')
@@ -79,7 +79,7 @@ def update():
     follows_team = request.form.get('follows_team', None)
     if not password == re_password:
         flash('Passwords must match')
-        return redirect(url_for('users.detail', user_id=user_id))
+        return redirect(url_for('admin.users.detail', user_id=user_id))
     roles = {
         'ADMIN': request.form.get('roles.ADMIN'),
     }
@@ -93,7 +93,7 @@ def update():
             user.password = generate_password_hash(password)
         else:
             flash('Not authorised to change password')
-            return redirect(url_for('users.detail', user_id=user_id))
+            return redirect(url_for('admin.users.detail', user_id=user_id))
     if not from_front_end:
         user_roles = copy.deepcopy(user.roles)
         for role in roles.keys():
@@ -113,4 +113,4 @@ def update():
     db_session.commit()
     db_session.close()
     flash('User updated')
-    return redirect(url_for('users.users'))
+    return redirect(url_for('admin.users.users'))

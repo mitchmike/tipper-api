@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'admin/admin_base.html' %}
 
 {% block header %}
     <h1>{% block title %}Build Model{% endblock %}</h1>
@@ -69,7 +69,7 @@
                     <div class="row">
                         <legend class="col-form-label col-sm-2 pt-0"></legend>
                         <div class="col-sm"><input class="btn btn-info" type="submit"
-                                                   formaction="{{ url_for('model_mgmt_api.build_model') }}"
+                                                   formaction="{{ url_for('admin.model_mgmt_api.build_model') }}"
                                                    value="Build"></div>
                     </div>
                 </td>

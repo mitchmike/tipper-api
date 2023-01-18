@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, request, flash, url_for, redirect
 from sqlalchemy import desc
 
 from api.db import new_session
-from api.route import predict
+from api.route.api import predict_api
 from api.route.auth import admin_required
 from datascrape.logging_config import LOGGING_CONFIG
 from model.ml_model import MLModel
@@ -62,4 +62,4 @@ def build_model():
     model = ModelBuilder(new_session(), model_type, model_strategy, model_features, target_variable).build()
     if model is None:
         flash(f'model not built due to unexpected error. see logs for details')
-    return redirect(url_for('model_mgmt_api.get_historical_models'))
+    return redirect(url_for('admin.model_mgmt_api.get_historical_models'))

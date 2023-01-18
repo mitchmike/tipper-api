@@ -1,0 +1,68 @@
+{% extends "app/app_base.html" %}
+
+{% block title %}
+Teams
+{% endblock %}
+
+{% block main %}
+<div class="container-fluid">
+    <div class="row justify-content-start">
+        <h1 class="display-5 ">Ladder</h1>
+    </div>
+    <hr/>
+    <br/>
+    <div class="row">
+        <div class='col-xs'>
+            <form action="/ladder" method="post">
+                <div class="form-group">
+                    <label>Season: </label>
+                    <select required autocomplete="off" class="form-control" name="season"  placeholder="Season" style="vertical-align:middle">
+                        <option disabled selected value="">Season</option>
+                        {% for s in ['2019','2020','2021','2022','2023'] %}
+                            {% if s == season %}
+                                <option selected value="{{ s }}">{{ s }}</option>
+                            {% else %}
+                                <option value="{{ s }}">{{ s }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-primary">Get Ladder</button>
+                </div>
+            </form>
+        </div>
+        {% if ladder %}
+        <br/>
+        <div class="col-lg">
+            <table class="table table-hover" style="max-width: 1100px; margin:auto">
+                <thead class="thead-dark">
+                    <tr><th colspan="5"><h1>{{season}} Ladder</h1></th></tr>
+                    <tr>
+                        <th scope="col" style="text-align: end;">Team</th>
+                        <th scope="col">W</th>
+                        <th scope="col">L</th>
+                        <th scope="col">D</th>
+                        <th scope="col">%</th>
+                    </tr>
+                </thead>
+                {% for team in ladder %}
+                        <tr id={{team.teamname}} class="clickable-row" style="cursor: pointer;" data-href="/teamdetail?team={{team.teamname}}">
+                            <td style="text-align: end;">{{ team.teamname }}</td>
+                            <td>{{ team.wins }}</td>
+                            <td>{{ team.losses }}</td>
+                            <td>{{ team.draws }}</td>
+                            <td>{{ (team.pf / team.pa * 100) | formatpcnt}}</td>
+                        </tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+<script>
+$(".clickable-row").click(function () {
+    window.location = $(this).data('href');
+});
+
+</script>
+
+{% endblock %}

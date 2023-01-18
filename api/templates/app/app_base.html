@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block base_headblock %}
+<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+{% block headblock %}{% endblock %}
+{% endblock %}
+{% block navblock %}
+    <nav class="navbar navbar-expand-md navbar-dark border" id="{{ session.get('team_identifier', None) }}">
+        <a class="navbar-brand" id="home" href="/"><span>Tipper</span></a>
+        <button aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler"
+                data-target="#navbar" data-toggle="collapse" type="button">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbar">
+            {% if session.user_id %}
+                <ul class="navbar-nav mr-auto mt-2">
+                    <li class="nav-item"><a class="nav-link" id="tip" href="/odds">Odds</a></li>
+                    <li class="nav-item"><a class="nav-link" id="predict" href="/predict">Predict</a></li>
+                    <li class="nav-item"><a class="nav-link" id="ladder" href="/ladder">Ladder</a></li>
+                    <li class="nav-item"><a class="nav-link" id="teamdetail" href="/teamdetail">Team Detail</a></li>
+
+                </ul>
+                <ul class="navbar-nav ml-auto mt-2">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('app.profile.profile') }}">Profile</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}">Log Out</a></li>
+                </ul>
+            {% else %}
+                <ul class="navbar-nav ml-auto mt-2">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.register') }}">Register</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}">Log In</a></li>
+                </ul>
+            {% endif %}
+        </div>
+    </nav>
+{% endblock %}
+{% block primary %}
+    <main class="container-fluid p-5">
+        <div aria-live="polite" aria-atomic="true" style="position: relative; min-height: 200px;">
+            <!-- Position it -->
+            <div style="position: absolute; top: 0; right: 0;">
+                {% for message in get_flashed_messages() %}
+                    <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" id="toastAlert"
+                         data-delay="5000">
+                        <div class="toast-header">
+                            <strong class="mr-auto">Notification</strong>
+                            <small>just now</small>
+                            <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="toast-body">
+                            {{ message }}
+                        </div>
+                    </div>
+
+                {% endfor %}
+            </div>
+            {% block main %}{% endblock %}
+        </div>
+
+    </main>
+    <script>
+        function activeLink() {
+            let path = window.location.pathname.split('/').pop()
+            if (path) {
+                var al = document.querySelector(`a#${path}`)
+                al.classList.add('active')
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', activeLink);
+
+        $(document).ready(function () {
+            $('.toast').toast('show');
+        });
+    </script>
+{% endblock %}

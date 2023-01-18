@@ -1,8 +1,6 @@
 import itertools
 from functools import cmp_to_key
 from flask import Blueprint, request
-from flask.json import JSONEncoder
-from itsdangerous import json
 
 from api.db import get_db_session_factory
 from model import Game
@@ -12,8 +10,12 @@ bp = Blueprint('ladder', __name__, url_prefix='/ladder')
 
 @bp.route('/')
 def ladder():
+    year = request.args['year']
+    return get_ladder(year)
+
+
+def get_ladder(year):
     try:
-        year = request.args['year']
         Session = get_db_session_factory()
         session = Session()
         games = session.query(Game).filter(Game.year == year)
@@ -38,10 +40,10 @@ def ladder():
             update_rung(lad, game.winner, game.away_team, game.away_score, game.home_score)
 
         sort_l = sorted(lad, key=cmp_to_key(LadderRung.compare))
-        return json.dumps(sort_l, cls=LadderEncoder)
+        return [rung.__dict__ for rung in sort_l]
     except Exception as e:
         print(f'Encountered exception while processing ladder request: {e}')
-        return {}
+        return []
 
 
 def update_rung(l, winner, team, pf, pa):
@@ -80,9 +82,3 @@ class LadderRung:
             return -1
         else:
             return 1
-
-
-class LadderEncoder(JSONEncoder):
-
-    def default(self, o):
-        return o.__dict__

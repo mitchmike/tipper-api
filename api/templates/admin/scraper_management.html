@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'admin/admin_base.html' %}
 
 {% block header %}
     <h1>{% block title %}Datascrape Controls{% endblock %}</h1>
@@ -21,7 +21,7 @@
     <table class="table table-bordered p-0" style="width: 80%">
         <tr>
             <td class="p-1">
-                <form action="{{ url_for('scrape_api.trigger_scrape_players') }}" method="get">
+                <form action="{{ url_for('admin.scrape_api.trigger_scrape_players') }}" method="get">
                     <div>
                         <input data-toggle="modal" data-target="#loadingModal" type="submit" class="btn btn-primary"
                                value="Scrape Players">
@@ -31,7 +31,7 @@
         </tr>
         <tr>
             <td class="p-1">
-                <form action="{{ url_for('scrape_api.trigger_scrape_games') }}" method="get">
+                <form action="{{ url_for('admin.scrape_api.trigger_scrape_games') }}" method="get">
                     <div>
                         <input data-toggle="modal" data-target="#loadingModal" type="submit" class="btn btn-primary"
                                value="Scrape Games">
@@ -43,7 +43,7 @@
         </tr>
         <tr>
             <td class="p-1">
-                <form action="{{ url_for('scrape_api.trigger_scrape_injuries') }}" method="get">
+                <form action="{{ url_for('admin.scrape_api.trigger_scrape_injuries') }}" method="get">
                     <div>
                         <input data-toggle="modal" data-target="#loadingModal" type="submit" class="btn btn-primary"
                                value="Scrape Injuries">
@@ -53,7 +53,7 @@
         </tr>
         <tr>
             <td class="p-1">
-                <form action="{{ url_for('scrape_api.trigger_scrape_fantasies') }}" method="get">
+                <form action="{{ url_for('admin.scrape_api.trigger_scrape_fantasies') }}" method="get">
                     <div>
                         <input data-toggle="modal" data-target="#loadingModal" type="submit" class="btn btn-primary"
                                value="Scrape Fantasy Points">
@@ -67,7 +67,7 @@
         </tr>
         <tr>
             <td class="p-1">
-                <form action="{{ url_for('scrape_api.trigger_scrape_match_stats') }}" method="get">
+                <form action="{{ url_for('admin.scrape_api.trigger_scrape_match_stats') }}" method="get">
                     <div>
                         <input data-toggle="modal" data-target="#loadingModal" type="submit" class="btn btn-primary"
                                value="Scrape Match Stats">

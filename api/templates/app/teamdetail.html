@@ -1,0 +1,185 @@
+{% extends "app/app_base.html" %}
+
+{% block headblock %}
+    {% if pcntdiffs %}
+        <script>
+            window.onload = function () {
+
+                var chart = new CanvasJS.Chart("chartContainer", {
+                    theme: "light2",
+                    title: {
+                        text: "% Difference from Opponent by Stat"
+                    },
+                    axisX: {
+                        minimum: 0,
+                        maximum: 20
+                    },
+                    axisY: {
+                        valueFormatString: "#%"
+                    },
+                    toolTip: {
+                        shared: true
+                    },
+                    legend: {
+                        cursor: "pointer",
+                        verticalAlign: "top",
+                        horizontalAlign: "center",
+                        dockInsidePlotArea: true,
+                        itemclick: toogleDataSeries
+                    },
+                    data: {{ pcntdiffs|tojson }}
+                });
+                chart.render();
+
+                function toogleDataSeries(e) {
+                    if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+                        e.dataSeries.visible = false;
+                    } else {
+                        e.dataSeries.visible = true;
+                    }
+                    chart.render();
+                }
+
+            }
+        </script>
+    {% endif %}
+{% endblock %}
+
+{% block title %}
+    {{ team }}
+{% endblock %}
+
+{% block main %}
+    <div class="container-fluid" id="teamdetail">
+        <div class="row" style="margin: auto;">
+            {% if not team %}
+                <h1 class="display-4">Choose Team</h1>
+                <div class="container teamdetailchoice">
+                    {% for t in teamslist %}
+                        <form href="/teamdetail" method="get" style="padding: 2px;">
+                            <input type="hidden" name="team" value="{{ t.team_identifier }}"/>
+                            <button type="submit" id="{{ t.team_identifier }}"
+                                    class="btn btn-light">{{ t.city }}</button>
+                        </form>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="col-xs-3 jumbotron" style="margin: auto; margin-bottom: 40px; background-color: #ffffff;">
+                    <image src='/static/logos/{{ team }}.png' alt="team-logo" style="width: 200px;">
+                        <h1 class="display-4">
+                            {% if team_detail %}
+                                <td>{{ team_detail.city }} {{ team_detail.name }}</td>
+                            {% else %}
+                                <td>{{ team }}</td>
+                            {% endif %}
+                        </h1>
+                    </image>
+                </div>
+                <div class="col-8" style="margin: auto; display: flex; justify-content: center;">
+                    <table class="table-sm table-striped table-bordered">
+                        <thead class="thead-dark">
+                        <tr>
+                            <th colspan="9"><h1 class="display-5">Last 10 Games by Season</h1></th>
+                        </tr>
+                        <tr>
+                            <th scope="col">Date</th>
+                            <th scope="col">Round</th>
+                            <th scope="col">Year</th>
+                            <th scope="col">Team</th>
+                            <th scope="col">For</th>
+                            <th scope="col">Opponent</th>
+                            <th scope="col">Against</th>
+                            <th scope="col">Winner</th>
+                            <th scope="col">Venue</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for game in games %}
+                            {% set home = team == game.home_team %}
+                            {% set pf = game.home_score if home else game.away_score %}
+                            {% set pa = game.away_score if home else game.home_score %}
+                            {% set opponent = game.away_team if home else game.home_team %}
+                            <tr>
+                                <td style="min-width: 200px;">{{ game.date_time }}</td>
+                                <td>{{ game.round_number }}</td>
+                                <td>{{ game.year }}</td>
+                                <td>{{ team }}</td>
+                                <td>{{ pf }}</td>
+                                <td>{{ opponent }}</td>
+                                <td>{{ pa }}</td>
+                                {% if game.winner == team %}
+                                    <td class='table-success'>{{ game.winner }}</td>
+                                {% else %}
+                                    <td class='table-danger'>{{ game.winner }}</td>
+                                {% endif %}
+                                <td>{{ game.venue }}</td>
+                            </tr>
+
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                </div>
+                <div class="container" style="max-width: 1100px;">
+                    <div class="row" style="height: 40px;"></div>
+                    <form action="/teamdetail" method="post">
+                        <div class="row statcheckboxes">
+                            <div class="col-md">
+                                <input type="hidden" name="team" value="{{ team }}">
+                                <input type="hidden" name="scrollPos" id="scrollPos" value="{{ scrollPos }}">
+                                {% for stat in availablestats %}
+                                    <div class="form-check form-check-inline">
+                                        {% if stat in selectedstats %}
+                                            <input checked class="form-check-input" name="stat" type="checkbox"
+                                                   value="{{ stat }}" id="{{ stat }}">
+                                        {% else %}
+                                            <input class="form-check-input" name="stat" type="checkbox"
+                                                   value="{{ stat }}" id="{{ stat }}">
+                                        {% endif %}
+                                        <label class="form-check-label" for="{{ stat }}">
+                                            {{ stat }}
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-xs" style="margin: auto; display: flex; justify-content: flex-start;">
+                                <label>Season: </label>
+                                <select required autocomplete="off" class="form-control" name="season"
+                                        placeholder="Season" style="vertical-align:middle">
+                                    <option disabled selected value="">Season</option>
+                                    {% for s in ['2019','2020','2021','2022','2023'] %}
+                                        {% if s == request.form['season'] %}
+                                            <option selected value="{{ s }}">{{ s }}</option>
+                                        {% else %}
+                                            <option value="{{ s }}">{{ s }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                <div class="form-group">
+                                    <button class="btn btn-primary" type="submit">Display Stats</button>
+                                </div>
+                            </div>
+                    </form>
+                </div>
+                <br/>
+                <div id="chartContainer" style="height: 370px; width: 100%;"></div>
+                </div>
+                <div class="row" style="height: 40px;"></div>
+            {% endif %}
+    </div>
+    <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            hiddenFormNode = document.querySelector("#scrollPos")
+            if (hiddenFormNode.value) {
+                // hiddenFormNode.value = hiddenFormNode.value;
+                $(window).scrollTop(hiddenFormNode.value);
+            }
+            $(window).on("scroll", function () {
+                hiddenFormNode.value = $(window).scrollTop()
+            });
+        });
+    </script>
+
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends "app/app_base.html" %}
+
+{% block title %}
+    Profile
+{% endblock %}
+
+{% block main %}
+    <div class="container">
+        <div class="row justify-content-center">
+            <h1 class="display-5 ">Hello {{ user_detail.first_name }} {{ user_detail.last_name }}</h1>
+        </div>
+        <hr/>
+        <br/>
+        <div class="row justify-content-center">
+            <div class='col-xs'>
+                <form>
+                    <div class="form-group">
+                        <table class="table table-hover">
+                            <tr>
+                                <td>Update Your Details</td>
+                            </tr>
+                            <tr>
+                                <td>History</td>
+                            </tr>
+                        </table>
+                    </div>
+                </form>
+            </div>
+            <div class="col-lg">
+                <form method="post" autocomplete="off">
+                    <input autocomplete="false" name="hidden" type="text" style="display:none;">
+                    <input name="id" value="{{ user_detail.id }}" hidden/>
+                    <h4 class="display-0 ">Update your details</h4>
+                    <table class="table table-hover">
+                        <tr>
+                            <td>first_name</td>
+                            <td><input name="first_name" type="text" id="first_name"
+                                       value="{{ user_detail.first_name }}"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>last_name</td>
+                            <td><input name="last_name" type="text" id="last_name" value="{{ user_detail.last_name }}"/>
+                            </td>
+                        </tr>
+                        <!--disable email field for existing accounts-->
+                        <tr>
+                            <td>email</td>
+                            <td><input name="email" type="text" id="email" value="{{ user_detail.email }}" required
+                                       {% if user_detail.email %}disabled{% endif %}/></td>
+                        </tr>
+                        <tr>
+                            <td>team</td>
+                            <td>
+                                <select id="team" name="team" class="form-control">
+                                    {% if user_detail.follows_team %}
+                                        <option value="">No team</option>
+                                    {% else %}
+                                        <option selected value="">No team</option>
+                                    {% endif %}
+                                    {% for team in teams %}
+                                        {% if team.id == user_detail.follows_team %}
+                                            <option value="{{ team.id }}" selected
+                                                    style="background-color: #008aab">{{ team.city }} {{ team.name }}</option>
+                                        {% else %}
+                                            <option value="{{ team.id }}">{{ team.city }} {{ team.name }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>password</td>
+                            <td>
+                                <input name="password" type="password" id="password" value=""
+                                       {% if not user_detail.id %}required{% endif %} autocomplete="new-password"/>
+                                <label> Re-enter password:</label>
+                                <input name="re_password" type="password" id="re_password" value=""
+                                       {% if not user_detail.id %}required{% endif %} autocomplete="new-password"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>created_at</td>
+                            <td>{{ user_detail.created_at }}</td>
+                        </tr>
+                        <tr>
+                            <td>updated_at</td>
+                            <td>{{ user_detail.updated_at }}</td>
+                        </tr>
+                    </table>
+                    <div>
+                        {% if user_detail.id %}
+                            <input type="submit" formaction="{{ url_for('app.profile.update') }}" value="Update">
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+        $(".clickable-row").click(function () {
+            window.location = $(this).data('href');
+        });
+
+    </script>
+
+{% endblock %}

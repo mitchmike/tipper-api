@@ -65,94 +65,165 @@ main {
     }
 }
 
+nav {
+    background-color: #343a40;
+}
 
-#richmond:hover {
+nav#richmond-tigers, #richmond-tigers:hover {
     color: black;
     background-color: #ffd200;
 }
 
-#melbourne:hover {
+nav#melbourne-demons, #melbourne-demons:hover {
     color: white;
     background-color: #cc2031;
 }
 
-#brisbanel:hover {
+nav#brisbane-lions, #brisbane-lions:hover {
     color: white;
     background-color: #7c0040;
 }
 
 
-#bullldogs:hover {
+nav#western-bulldogs, #western-bulldogs:hover {
     color: white;
     background-color: #1b2e71;
 }
 
-#geelong:hover {
+nav#geelong-cats, #geelong-cats:hover {
     color: white;
     background-color: #002b5c;
 }
 
-#padelaide:hover {
+nav#port-adelaide-power, #port-adelaide-power:hover {
     color: white;
     background-color: #008aab;
 }
 
-#stkilda:hover {
+nav#st-kilda-saints, #st-kilda-saints:hover {
     color: white;
     background-color: #ed1b2f;
 }
 
-#collingwood:hover {
+nav#collingwood-magpies, #collingwood-magpies:hover {
     color: white;
     background-color: #000000;
 }
 
-#gws:hover {
+nav#greater-western-sydney-giants, #greater-western-sydney-giants:hover {
     color: white;
     background-color: #f47920;
 }
 
-#carlton:hover {
+nav#carlton-blues, #carlton-blues:hover {
     color: white;
     background-color: #031a29;
 }
 
-#fremantle:hover {
+nav#fremantle-dockers, #fremantle-dockers:hover {
     color: white;
     background-color: #2a0d54;
 }
 
-#essendon:hover {
+nav#essendon-bombers, #essendon-bombers:hover {
     color: white;
     background-color: #CC2031;
 }
 
-#goldcoast:hover {
+nav#gold-coast-suns, #gold-coast-suns:hover {
     color: white;
     background-color: #ee3728;
 }
 
-#hawthorn:hover {
+nav#hawthorn-hawks, #hawthorn-hawks:hover {
     color: white;
     background-color: #4d2004;
 }
 
-#swans:hover {
+nav#sydney-swans, #sydney-swans:hover {
     color: white;
     background-color: #ed171f;
 }
 
-#kangaroos:hover {
+nav#kangaroos, #kangaroos:hover {
     color: black;
     background-color: #c4d1e5;
 }
 
-#adelaide:hover {
+nav#adelaide-crows, #adelaide-crows:hover {
     color: black;
     background-color: gold;
 }
 
-#westcoast:hover {
+nav#west-coast-eagles, #west-coast-eagles:hover {
     color: black;
     background-color: #f2a900;
 }
+
+
+/*CheckBox*/
+  .checkbox-wrapper-31:hover .check {
+    stroke-dashoffset: 0;
+  }
+
+  .checkbox-wrapper-31 {
+    position: relative;
+    display: inline-block;
+    width: 25px;
+    height: 25px;
+  }
+  .checkbox-wrapper-31 .background {
+    fill: #ccc;
+    transition: ease all 0.3s;
+    -webkit-transition: ease all 0.3s;
+  }
+  .checkbox-wrapper-31 .stroke {
+    fill: none;
+    stroke: #fff;
+    stroke-miterlimit: 10;
+    stroke-width: 2px;
+    stroke-dashoffset: 100;
+    stroke-dasharray: 100;
+    transition: ease all 0.3s;
+    -webkit-transition: ease all 0.3s;
+  }
+  .checkbox-wrapper-31 .check {
+    fill: none;
+    stroke: #fff;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2px;
+    stroke-dashoffset: 22;
+    stroke-dasharray: 22;
+    transition: ease all 0.3s;
+    -webkit-transition: ease all 0.3s;
+  }
+  .checkbox-wrapper-31 input[type=checkbox] {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    margin: 0;
+    opacity: 0;
+    -appearance: none;
+    -webkit-appearance: none;
+  }
+  .checkbox-wrapper-31 input[type=checkbox]:hover {
+    cursor: pointer;
+  }
+
+.checkbox-wrapper-31 input[type=checkbox]:checked + svg .background.round-check {
+    fill: #002b5c;
+}
+.checkbox-wrapper-31 input[type=checkbox]:checked + svg .background {
+    fill: #6cbe45;
+  }
+  .checkbox-wrapper-31 input[type=checkbox]:checked + svg .stroke {
+    stroke-dashoffset: 0;
+  }
+  .checkbox-wrapper-31 input[type=checkbox]:checked + svg .check {
+    stroke-dashoffset: 0;
+  }
+
+/* end checkbox */

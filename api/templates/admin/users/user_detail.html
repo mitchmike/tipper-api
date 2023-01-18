@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'admin/admin_base.html' %}
 
 {% block header %}
   <h1>{% block title %}User Detail{% endblock %}</h1>
@@ -40,8 +40,8 @@
     </table>
     <div>
         {% if user.id %}
-        <input type="submit" formaction="{{url_for('users.update')}}" value="Update">
-        <input type="submit" formaction="{{url_for('users.delete')}}" value="Delete">
+        <input type="submit" formaction="{{url_for('admin.users.update')}}" value="Update">
+        <input type="submit" formaction="{{url_for('admin.users.delete')}}" value="Delete">
         {% else %}
         <input type="submit" formaction="{{url_for('auth.admin_register')}}" value="Create">
         {% endif %}

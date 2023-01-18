@@ -32,9 +32,9 @@ class User(Base):
 
     def __repr__(self):
         return "<User(id='%s', first_name='%s', last_name='%s', " \
-                "email='%s', roles='%s', " \
+                "email='%s', roles='%s', follows_team='%s'," \
                "created_at='%s', updated_at='%s')>" % (self.id, self.first_name,
-                                                       self.last_name, self.email, self.roles,
+                                                       self.last_name, self.email, self.roles, self.follows_team,
                                                        self.created_at, self.updated_at)
 
     def as_dict(self):

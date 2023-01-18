@@ -4,7 +4,7 @@ from flask import (
 from sqlalchemy import or_, desc, and_
 
 from api.db import new_session
-from api.route.db_mgmt_api import safe_int
+from api.route.admin.db_mgmt_api import safe_int
 from api.schema.fantasy_schema import FantasySchema
 from api.schema.games.game_schema import GameSchema
 from api.schema.games.game_schema_match_stats import GameMatchStatsSchema
@@ -22,7 +22,7 @@ MAX_GAMES_FOR_STATS = 30
 @bp.route('/teams')
 def select_teams():
     with new_session() as session:
-        data = select_data(session, Team, ('team_identifier', 'id')).all()
+        data = select_data(session, Team, ('team_identifier', 'id'), request.args).all()
         schema = TeamSchema(many=True)
         return jsonify(schema.dump(data))
 
@@ -45,11 +45,15 @@ def get_recent_year_rounds(lastXRounds):
 
 @bp.route("/games")
 def select_games():
+    return jsonify(get_games(request.args))
+
+
+def get_games(args):
     with new_session() as session:
-        data = select_data(session, Game, ('id', 'home_team', 'away_team', 'year'))
+        data = select_data(session, Game, ('id', 'home_team', 'away_team', 'year'), args)
         # custom filters
-        for key in request.args.keys():
-            value = request.args.get(key)
+        for key in args.keys():
+            value = args.get(key)
             if key == 'team':
                 data = data.filter(or_(Game.home_team == value, Game.away_team == value))
             if key == 'lastXRounds':
@@ -58,18 +62,16 @@ def select_games():
                 data = data.filter(or_(Game.year > earliest[0], and_(Game.year == earliest[0], Game.round_number >= earliest[1])))
         data = data.order_by('year', 'round_number').all()
         includeStats = False
-        if 'includeStats' in request.args.keys():
+        if 'includeStats' in args.keys():
             if len(data) <= MAX_GAMES_FOR_STATS:
                 includeStats = True
         schema = GameMatchStatsSchema(many=True) if includeStats else GameSchema(many=True)
-        dump_data = schema.dump(data)
-        return jsonify(dump_data)
-
+        return schema.dump(data)
 
 @bp.route("/players")
 def select_players():
     with new_session() as session:
-        data = select_data(session, Player, ('id', 'team'))
+        data = select_data(session, Player, ('id', 'team'), request.args)
         data = data.order_by('team', 'number').all()
         schema = PlayerInjurySchema(many=True)
         dump_data = schema.dump(data)
@@ -84,7 +86,7 @@ def select_player_points():
         return f"Required argument 'mode' is not valid. valid values: {available_modes}", 400
     model = PlayerSupercoach if mode == 'supercoach' else PlayerFantasy
     with new_session() as session:
-        data = select_data(session, model, ('id', 'round', 'year'))
+        data = select_data(session, model, ('id', 'round', 'year'), request.args)
         for key in request.args.keys():
             value = request.args.get(key)
             if key == 'team':
@@ -108,7 +110,7 @@ def select_matchstats():
     if not accept_request:
         return f"Endpoint requires at least one of the following request params: {required_param_opts}"
     with new_session() as session:
-        data = select_data(session, MatchStatsPlayer, ('id', 'team', 'game_id'))
+        data = select_data(session, MatchStatsPlayer, ('id', 'team', 'game_id'), request.args)
         data = data.order_by('id').all()
         schema = MatchStatsSchema(many=True)
         dump_data = schema.dump(data)
@@ -127,10 +129,10 @@ def select_pcnt_diff():
         return jsonify(get_pcnt_diff(session, team, [(year, ALL_ROUNDS)]))
 
 
-def select_data(session, model, filters):
+def select_data(session, model, filters, args):
     data = session.query(model)
-    for key in request.args.keys():
-        value = request.args.get(key)
+    for key in args.keys():
+        value = args.get(key)
         if key in filters:
             data = data.filter(getattr(model, key) == value)
     return data

@@ -1,7 +1,7 @@
 from flask import jsonify, Blueprint, request
 
 from api.db import new_session
-from api.route.db_mgmt_api import safe_int
+from api.route.admin.db_mgmt_api import safe_int
 from api.services.cache import cached
 from predictions.ModelBuilder import ModelBuilder
 from predictions.ResultPredictor import ResultPredictor
@@ -33,13 +33,18 @@ def predict():
         opp_year_rounds = parse_year_round(request.json.get('opp_year_rounds'))
     if team is None or opp is None or model_features is None:
         return None
+    else:
+        return jsonify(predict(user_id, team, opp, model_features, target_variable, team_year_rounds, opp_year_rounds))
+
+
+def get_prediction(user_id, team, opp, model_features, target_variable, team_year_rounds, opp_year_rounds):
     with new_session() as db_session:
         predictor = ResultPredictor(db_session, user_id, team, opp,
                                     'LinearRegression', 'pcnt_diff',
                                     model_features,
                                     target_variable)
         prediction = predictor.get_prediction(team_year_rounds, opp_year_rounds)
-        return jsonify(prediction)
+        return prediction
 
 
 @bp.route('/available_features')
