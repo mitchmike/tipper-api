@@ -1,6 +1,5 @@
 import os
 
-import requests
 from flask import Blueprint, render_template, request, flash, session, jsonify
 
 from api import db
@@ -24,20 +23,16 @@ def predict():
     form_detail = {}
     db_session = db.new_session()
     teams = db_session.query(Team).order_by(Team.team_identifier).all()
-    # teams = sorted(requests.get(f'{serverEndpoint}/select/teams').json(), key=lambda x: x['team_identifier'])
     form_detail['teams'] = teams
     team_map = {}
     for team in teams:
         team_map[team.team_identifier] = team.city + " " + team.name
     form_detail['team_map'] = team_map
     features = ModelBuilder.available_features()
-    # features = requests.get(f'{serverEndpoint}/predict/available_features').json()
     form_detail['features'] = features
     game_count = safe_int(request.form.get('game_count', DEFAULT_GAME_COUNT))
     form_detail['game_count'] = game_count
     recent_year_rounds = get_recent_year_rounds(game_count)
-    # recent_year_rounds = requests.get(
-    #     f'{serverEndpoint}/select/recent_year_rounds?lastXRounds={game_count}').json()
     team_year_rounds = recent_year_rounds
     opp_year_rounds = recent_year_rounds
     prediction = None
@@ -59,12 +54,6 @@ def predict():
             flash('No target_variable selected for model')
         elif team is not None and opp is not None and len(team_year_rounds) > 0 and len(opp_year_rounds) > 0:
             prediction = get_prediction(session.get('user_id'), team, opp, selected_features, target_variable, team_year_rounds, opp_year_rounds)
-            # prediction = requests.post(f'{serverEndpoint}/predict',
-            #                            json={'user_id': session.get('user_id'), 'team': team, 'opp': opp,
-            #                                  'model_features': selected_features,
-            #                                  'target_variable': target_variable,
-            #                                  'team_year_rounds': team_year_rounds,
-            #                                  'opp_year_rounds': opp_year_rounds}).json()
     form_detail['team_year_rounds'] = team_year_rounds
     form_detail['opp_year_rounds'] = opp_year_rounds
     form_detail['default_target_var'] = 'score'

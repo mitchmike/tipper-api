@@ -59,7 +59,8 @@ def get_games(args):
             if key == 'lastXRounds':
                 last_x_games = get_recent_year_rounds(value)
                 earliest = last_x_games[-1]
-                data = data.filter(or_(Game.year > earliest[0], and_(Game.year == earliest[0], Game.round_number >= earliest[1])))
+                data = data.filter(
+                    or_(Game.year > earliest[0], and_(Game.year == earliest[0], Game.round_number >= earliest[1])))
         data = data.order_by('year', 'round_number').all()
         includeStats = False
         if 'includeStats' in args.keys():
@@ -67,6 +68,7 @@ def get_games(args):
                 includeStats = True
         schema = GameMatchStatsSchema(many=True) if includeStats else GameSchema(many=True)
         return schema.dump(data)
+
 
 @bp.route("/players")
 def select_players():

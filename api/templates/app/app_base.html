@@ -14,10 +14,10 @@
         <div class="collapse navbar-collapse" id="navbar">
             {% if session.user_id %}
                 <ul class="navbar-nav mr-auto mt-2">
-                    <li class="nav-item"><a class="nav-link" id="tip" href="/odds">Odds</a></li>
-                    <li class="nav-item"><a class="nav-link" id="predict" href="/predict">Predict</a></li>
-                    <li class="nav-item"><a class="nav-link" id="ladder" href="/ladder">Ladder</a></li>
-                    <li class="nav-item"><a class="nav-link" id="teamdetail" href="/teamdetail">Team Detail</a></li>
+                    <li class="nav-item"><a class="nav-link" id="tip" href={{ url_for('app.odds.tip') }}>Odds</a></li>
+                    <li class="nav-item"><a class="nav-link" id="predict" href={{ url_for('app.predict.predict') }}>Predict</a></li>
+                    <li class="nav-item"><a class="nav-link" id="ladder" href={{ url_for('app.ladder.ladder') }}>Ladder</a></li>
+                    <li class="nav-item"><a class="nav-link" id="teamdetail" href={{ url_for('app.teamdetail.teamdetail') }}>Teams</a></li>
 
                 </ul>
                 <ul class="navbar-nav ml-auto mt-2">
@@ -34,7 +34,7 @@
     </nav>
 {% endblock %}
 {% block primary %}
-    <main class="container-fluid p-5">
+    <main class="container-fluid p-0 m-0">
         <div aria-live="polite" aria-atomic="true" style="position: relative; min-height: 200px;">
             <!-- Position it -->
             <div style="position: absolute; top: 0; right: 0;">

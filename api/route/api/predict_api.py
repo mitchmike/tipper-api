@@ -5,6 +5,7 @@ from api.route.admin.db_mgmt_api import safe_int
 from api.services.cache import cached
 from predictions.ModelBuilder import ModelBuilder
 from predictions.ResultPredictor import ResultPredictor
+from predictions.aggregated_match_stats import ALL_ROUNDS
 
 bp = Blueprint('predict', __name__, url_prefix='/predict')
 
@@ -21,8 +22,8 @@ def predict():
         opp = request.args.get('opp')
         model_features = DEFAULT_FEATURES
         target_variable = request.args.get('target_var', 'score')
-        team_year_rounds = [(2022,)]
-        opp_year_rounds = [(2022,)]
+        team_year_rounds = [(2022, ALL_ROUNDS)]
+        opp_year_rounds = [(2022, ALL_ROUNDS)]
     else:
         user_id = request.json.get('user_id')
         team = request.json.get('team')
@@ -34,7 +35,7 @@ def predict():
     if team is None or opp is None or model_features is None:
         return None
     else:
-        return jsonify(predict(user_id, team, opp, model_features, target_variable, team_year_rounds, opp_year_rounds))
+        return jsonify(get_prediction(user_id, team, opp, model_features, target_variable, team_year_rounds, opp_year_rounds))
 
 
 def get_prediction(user_id, team, opp, model_features, target_variable, team_year_rounds, opp_year_rounds):

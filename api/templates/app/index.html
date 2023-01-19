@@ -1,34 +1,68 @@
 {% extends "app/app_base.html" %}
 
 {% block title %}
-Home
+    Home
 {% endblock %}
 
 {% block main %}
-<div class="container">
-    <h1 >Welcome to Tipper, </h1>
-    <h5 >the home of Footy Tipping!</h5>
-    <div class="container p-3" id="indexmenu" style="max-width: 1100px;">
-        <div class="row">
-            <div class="col-sm p-2">
+    <div class="container-fluid p-0 m-0">
+        <div class="bg-dark text-white">
+            <div class="img-wrapper ">
+                <img src="{{ url_for('static', filename='canvas.jpg') }}"
+                     alt="home_page_card_background">
             </div>
-            <div class="col-sm p-2">
-                <a class="btn " href="/teamdetail"><h3>Study the Teams</h3></a>
-            </div>
-            <div class="col-sm p-2">
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-sm p-2">
-                
-            </div>
-            <div class="col-sm p-2">
-                <a class="btn " href="/tip"><h3>Start Tipping!</h3></a>
-            </div>
-            <div class="col-sm p-2">
-                
+            <div class="card-img-overlay">
+                <h1 class="card-title">Tipper</h1>
+                <div class="row d-flex">
+                    <div class="col-sm-3 p-5 d-flex justify-content-center">
+                        <div class="card text-center bg-dark text-white ">
+                            <div class="card-header">
+                                Odds
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">Check the odds for upcoming games.</p>
+                                <a href="{{ url_for('app.odds.tip') }}" class="btn btn-primary stretched-link">Go</a>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="col-sm-3 p-5 d-flex justify-content-center">
+                        <div class="card text-center bg-dark text-white ">
+                            <div class="card-header">
+                                Predict
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">Use machine learning to predict results.</p>
+                                <a href="{{ url_for('app.predict.predict') }}" class="btn btn-primary stretched-link">Go</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-3 p-5 d-flex justify-content-center">
+                        <div class="card text-center bg-dark text-white ">
+                            <div class="card-header">
+                                Ladder
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">View the AFL ladder.</p>
+                                <a href="{{ url_for('app.ladder.ladder') }}" class="btn btn-primary stretched-link">Go</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-3 p-5 d-flex justify-content-center">
+                        <div class="card text-center bg-dark text-white ">
+                            <div class="card-header">
+                                Teams
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">Study team statistics and form.</p>
+                                <a href="{{ url_for('app.teamdetail.teamdetail') }}" class="btn btn-primary stretched-link">Go</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="card-text"></p>
+                <p class="card-text"></p>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}
