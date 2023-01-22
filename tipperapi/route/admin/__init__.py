@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template
 
-from api.route.auth import login_required
+from tipperapi.route.auth import login_required
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 

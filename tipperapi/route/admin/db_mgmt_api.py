@@ -2,9 +2,9 @@ import datetime
 
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 
-from api.db import get_db_session_factory
-from api.route.auth import admin_required
-from api.services.utils import safe_int
+from tipperapi.db import get_db_session_factory
+from tipperapi.route.auth import admin_required
+from tipperapi.services.utils import safe_int
 from model import Injury, PlayerFantasy, Player, PlayerSupercoach, MatchStatsPlayer, Game
 
 bp = Blueprint('db_mgmt_api', __name__, url_prefix='/database')

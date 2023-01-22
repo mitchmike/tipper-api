@@ -1,13 +1,13 @@
 import os
-from dotenv import load_dotenv
-from flask import Flask, url_for, redirect, render_template
 
-from api.route.api import api_bp
-from api.route import auth
-from api.route.api import select_api, predict_api, ladder_api
-from api.route.admin import db_mgmt_api, model_mgmt_api, user_admin, scrape_api, admin_bp
-from api.route.app import app_bp, ladder, teamdetail, odds, profile, predict
-from api.services.cache import cache
+from dotenv import load_dotenv
+from flask import Flask, render_template
+
+from tipperapi.route import auth
+from tipperapi.route.admin import db_mgmt_api, model_mgmt_api, user_admin, scrape_api, admin_bp
+from tipperapi.route.api import select_api, predict_api, ladder_api, api_bp
+from tipperapi.route.app import app_bp, ladder, teamdetail, odds, profile, predict
+from tipperapi.services.cache import cache
 
 
 def create_app(test_config=None):

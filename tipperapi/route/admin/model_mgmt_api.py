@@ -3,9 +3,9 @@ import logging
 from flask import Blueprint, render_template, request, flash, url_for, redirect
 from sqlalchemy import desc
 
-from api.db import new_session
-from api.route.api import predict_api
-from api.route.auth import admin_required
+from tipperapi.db import new_session
+from tipperapi.route.api import predict_api
+from tipperapi.route.auth import admin_required
 from datascrape.logging_config import LOGGING_CONFIG
 from model.ml_model import MLModel
 from predictions.ModelBuilder import ModelBuilder

@@ -2,11 +2,11 @@ import os
 
 from flask import Blueprint, render_template, request, flash, session, jsonify
 
-from api import db
-from api.route.api.predict_api import get_prediction
-from api.route.api.select_api import get_recent_year_rounds, get_games
-from api.route.auth import login_required
-from api.services.utils import safe_int
+from tipperapi import db
+from tipperapi.route.api.predict_api import get_prediction
+from tipperapi.route.api.select_api import get_recent_year_rounds, get_games
+from tipperapi.route.auth import login_required
+from tipperapi.services.utils import safe_int
 from model import Team, Game
 from predictions.ModelBuilder import ModelBuilder
 

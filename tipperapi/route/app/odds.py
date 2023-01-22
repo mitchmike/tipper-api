@@ -4,7 +4,7 @@ from datetime import time
 import requests
 from flask import Blueprint, request, render_template
 
-from api.route.auth import login_required
+from tipperapi.route.auth import login_required
 
 restEndpoint = os.environ.get('TIPPER_BACKEND_ENDPOINT')
 serverEndpoint = os.environ.get('TIPPER_SERVER_ENDPOINT')

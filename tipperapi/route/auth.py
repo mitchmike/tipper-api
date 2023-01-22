@@ -3,7 +3,7 @@ import functools
 from flask import Blueprint, request, flash, url_for, redirect, session, g, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from api import db
+from tipperapi import db
 from model import Team, User
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')

@@ -1,7 +1,7 @@
 from marshmallow.fields import Nested
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 
-from api.schema.ml_model_schema import MLModelSchema
+from tipperapi.schema.ml_model_schema import MLModelSchema
 from model import Prediction
 
 

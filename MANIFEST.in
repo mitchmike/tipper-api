@@ -1,5 +1,11 @@
-graft api/route
-graft api/schema
-graft api/static
-graft api/templates
+graft tipperapi/route
+graft tipperapi/schema
+graft tipperapi/services
+graft tipperapi/static
+graft tipperapi/templates
+graft predictions
+graft model
+graft datascrape
+
+
 global-exclude *.pyc

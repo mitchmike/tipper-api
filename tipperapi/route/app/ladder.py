@@ -3,8 +3,8 @@ import os
 import requests
 from flask import Blueprint, request, render_template, redirect, url_for
 
-from api.route.api.ladder_api import get_ladder
-from api.route.auth import login_required
+from tipperapi.route.api.ladder_api import get_ladder
+from tipperapi.route.auth import login_required
 
 serverEndpoint = os.environ.get('TIPPER_SERVER_ENDPOINT')
 bp = Blueprint('ladder', __name__)

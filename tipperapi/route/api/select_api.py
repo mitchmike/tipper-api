@@ -3,15 +3,15 @@ from flask import (
 )
 from sqlalchemy import or_, desc, and_
 
-from api.db import new_session
-from api.route.admin.db_mgmt_api import safe_int
-from api.schema.fantasy_schema import FantasySchema
-from api.schema.games.game_schema import GameSchema
-from api.schema.games.game_schema_match_stats import GameMatchStatsSchema
-from api.schema.match_stats_schema import MatchStatsSchema
-from api.schema.player.player_injury import PlayerInjurySchema
-from api.schema.supercoach_schema import SuperCoachSchema
-from api.schema.team_schema import TeamSchema
+from tipperapi.db import new_session
+from tipperapi.route.admin.db_mgmt_api import safe_int
+from tipperapi.schema.fantasy_schema import FantasySchema
+from tipperapi.schema.games.game_schema import GameSchema
+from tipperapi.schema.games.game_schema_match_stats import GameMatchStatsSchema
+from tipperapi.schema.match_stats_schema import MatchStatsSchema
+from tipperapi.schema.player.player_injury import PlayerInjurySchema
+from tipperapi.schema.supercoach_schema import SuperCoachSchema
+from tipperapi.schema.team_schema import TeamSchema
 from model import Game, Player, PlayerFantasy, PlayerSupercoach, MatchStatsPlayer, Team
 from predictions.aggregated_match_stats import get_pcnt_diff, ALL_ROUNDS
 

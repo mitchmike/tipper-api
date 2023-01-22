@@ -2,7 +2,7 @@ import itertools
 from functools import cmp_to_key
 from flask import Blueprint, request
 
-from api.db import get_db_session_factory
+from tipperapi.db import get_db_session_factory
 from model import Game
 
 bp = Blueprint('ladder', __name__, url_prefix='/ladder')

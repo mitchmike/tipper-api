@@ -1,3 +1,4 @@
+import os.path
 import time
 import traceback
 from datetime import datetime
@@ -6,7 +7,7 @@ import logging.config
 
 import joblib
 from dotenv import load_dotenv
-from flask import json
+from flask import json, current_app
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import numpy as np
@@ -32,6 +33,7 @@ class ModelBuilder:
         self.model_strategy = model_strategy
         self.features = fields
         self.target_variable = target_variable
+        self.model_file_path = current_app.config['MODEL_FILE_PATH']
 
     def build(self):
         LOGGER.info("Starting model build")
@@ -78,12 +80,11 @@ class ModelBuilder:
 
     def save_to_file(self, model, model_record):
         ts = time.time_ns()
-        # TODO fix up file path
-        file_name = 'G:\\Code\\Tiplos\\tipper-api\\predictions\\model_files\\' + self.model_type + "_" + str(
-            ts) + ".sav"
-        LOGGER.info(f'saving to file {file_name}')
-        joblib.dump(model, file_name)
-        model_record.file_name = file_name
+        file_name = self.model_type + "_" + str(ts) + ".sav"
+        file_path = os.path.join(self.model_file_path, file_name)
+        LOGGER.info(f'saving to file {file_path}')
+        joblib.dump(model, file_path)
+        model_record.file_name = file_path
 
     # TODO different metrics for each type of model
     def analyse(self, model, X_t, y_t, model_record):

@@ -1,7 +1,7 @@
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 from marshmallow_sqlalchemy.fields import Nested
 
-from api.schema.match_stats_schema import MatchStatsSchema
+from tipperapi.schema.match_stats_schema import MatchStatsSchema
 from model.game import Game
 
 

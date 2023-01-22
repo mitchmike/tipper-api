@@ -1,9 +1,9 @@
 from flask import Blueprint, render_template, flash, redirect, url_for, request, g
 from sqlalchemy import desc
 
-from api.db import new_session
-from api.route.auth import admin_required
-from api.route.admin.db_mgmt_api import safe_int
+from tipperapi.db import new_session
+from tipperapi.route.auth import admin_required
+from tipperapi.route.admin.db_mgmt_api import safe_int
 from datascrape.scrapers.fantasyScrape import FantasyScraper
 from datascrape.scrapers.gameScrape import GameScraper
 from datascrape.scrapers.injuryScrape import InjuryScraper

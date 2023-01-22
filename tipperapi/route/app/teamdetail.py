@@ -4,9 +4,9 @@ import requests
 from flask import Blueprint, request, render_template
 from sqlalchemy import or_
 
-from api import db
-from api.route.auth import login_required
-from api.services.utils import safe_int
+from tipperapi import db
+from tipperapi.route.auth import login_required
+from tipperapi.services.utils import safe_int
 from model import Team, Game
 from predictions.aggregated_match_stats import ALL_ROUNDS, get_pcnt_diff
 

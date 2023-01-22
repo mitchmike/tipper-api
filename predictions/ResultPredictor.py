@@ -5,7 +5,7 @@ import joblib
 import pandas as pd
 from flask import json
 
-from api.schema.prediction_schema import PredictionSchema
+from tipperapi.schema.prediction_schema import PredictionSchema
 from datascrape.logging_config import LOGGING_CONFIG
 from model import MLModel, Prediction
 from predictions.ModelBuilder import ModelBuilder

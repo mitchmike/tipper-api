@@ -1,7 +1,7 @@
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 from marshmallow_sqlalchemy.fields import Nested
 
-from api.schema.injury_schema import InjurySchema
+from tipperapi.schema.injury_schema import InjurySchema
 from model import Player
 
 

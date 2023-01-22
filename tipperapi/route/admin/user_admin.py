@@ -4,9 +4,9 @@ import datetime
 from flask import Blueprint, render_template, request, flash, redirect, url_for, g
 from werkzeug.security import generate_password_hash
 
-from api import db
-from api.route.auth import admin_required
-from api.route.admin.db_mgmt_api import safe_int
+from tipperapi import db
+from tipperapi.route.auth import admin_required
+from tipperapi.route.admin.db_mgmt_api import safe_int
 from model import Team
 from model.api_model.user import User
 

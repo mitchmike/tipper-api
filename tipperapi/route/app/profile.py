@@ -4,9 +4,9 @@ import os
 from flask import Blueprint, render_template, session, request, redirect, url_for, flash
 from werkzeug.security import generate_password_hash
 
-from api import db
-from api.route.auth import login_required
-from api.services.utils import safe_int
+from tipperapi import db
+from tipperapi.route.auth import login_required
+from tipperapi.services.utils import safe_int
 from model import User, Team
 
 serverEndpoint = os.environ.get('TIPPER_SERVER_ENDPOINT')
