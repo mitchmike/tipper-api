@@ -1,1 +1,1 @@
-web: gunicorn tipperapi:create_app()
+web: gunicorn 'tipperapi:create_app()'
