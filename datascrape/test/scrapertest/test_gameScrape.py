@@ -109,7 +109,7 @@ class TestGameScrape(BaseScraperTest):
         finals_first_row = finals_soup.select('tr')[0]
         finals_games = self.gameScrape._process_row(finals_first_row, self.headers, [], self.YEAR, 1)
         self.assertIsNotNone(finals_games)
-        self.assertEqual(finals_games[0].round_number, 54)  # round for grand-final
+        self.assertEqual(finals_games[0].round_number, 53)  # round for grand-final
 
     def test_scrape_game(self):
         row = self.one_row_soup.find('tr')

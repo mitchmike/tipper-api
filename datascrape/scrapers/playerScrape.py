@@ -68,7 +68,7 @@ class PlayerScraper(BaseScraper):
             # Get the first row
             first_row = data[0].parent
             # Mapping of field names in html table in index order
-            headers = [x.text for x in first_row.findPrevious('tr').find_all('a')]
+            headers = [x.text for x in first_row.findPrevious('tr').find_all('span')]
             # recursive function to continue through rows until they no longer have data children
             players = self.process_row(first_row, headers, team, [])
             LOGGER.info(f'Found {len(players)} records for team: {team}. Upserting to database')
