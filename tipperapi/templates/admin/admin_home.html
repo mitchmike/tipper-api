@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block content %}
-<ul>
+<ul class="bg-white border">
     <li><a href="{{url_for('admin.users.users')}}">User Management</a></li>
     <li><a href="{{url_for('admin.scrape_api.scrape_management')}}">Datascrape Controls</a></li>
     <li><a href="{{url_for('admin.db_mgmt_api.db_mgmt_home')}}">Database Management</a></li>

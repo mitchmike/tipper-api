@@ -52,7 +52,7 @@ def get_current_models():
 @admin_required
 def build_model():
     if request.method == 'GET':
-        features = predict.available_features()
+        features = ModelBuilder.available_features()
         return render_template('admin/model_build.html', features=features)
     # build custom model for given params
     model_type = request.form.get('model_type')
