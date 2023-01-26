@@ -36,8 +36,6 @@ class ResultPredictor:
         team_year_rounds = team_year_rounds if len(team_year_rounds) > 0 else default_yrs
         opp_year_rounds = opp_year_rounds if len(opp_year_rounds) > 0 else default_yrs
 
-        # TODO check cache for matching prediction
-
         # build pcnt diff dataset for prediction
         # TODO consider player lists, weightings
         team_data = get_pcnt_diff(self.session, self.team, team_year_rounds)

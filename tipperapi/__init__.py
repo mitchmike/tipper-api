@@ -10,11 +10,11 @@ from tipperapi.route.app import app_bp, ladder, teamdetail, odds, profile, predi
 from tipperapi.services.cache import cache
 
 
-def create_app(test_config=None):
+def create_app(test_config=None, testing=False):
     load_dotenv()
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
-    env_config = os.getenv("APP_SETTINGS", "config.DevelopmentConfig")
+    env_config = os.getenv("APP_SETTINGS", "config.DevelopmentConfig") if not testing else "config.TestConfig"
     app.config.from_object(env_config)
 
     if test_config is None:

@@ -20,3 +20,9 @@ class StagingConfig(Config):
 
 class DevelopmentConfig(Config):
     ENV_NAME = 'DEV'
+
+
+class TestConfig(Config):
+    ENV_NAME = 'TESTING'
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL_TEST',)
