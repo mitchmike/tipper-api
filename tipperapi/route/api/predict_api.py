@@ -1,16 +1,18 @@
 from flask import jsonify, Blueprint, request
 
-from tipperapi.db import new_session
-from tipperapi.route.admin.db_mgmt_api import safe_int
-from tipperapi.services.cache import cached
 from predictions.ModelBuilder import ModelBuilder
 from predictions.ResultPredictor import ResultPredictor
 from predictions.aggregated_match_stats import ALL_ROUNDS
+from tipperapi.db import new_session
+from tipperapi.route.admin.db_mgmt_api import safe_int
+from tipperapi.services.cache import cached, cache
 
 bp = Blueprint('predict', __name__, url_prefix='/predict')
 
 DEFAULT_FEATURES = sorted(
     ['kicks', 'disposals', 'behinds', 'frees_against', 'stoppage_clearances', 'metres_gained', 'goals'])
+
+KEY = 'prediction/{}/{}'
 
 
 @bp.route('/', methods=('GET', 'POST'))
@@ -39,13 +41,17 @@ def predict():
 
 
 def get_prediction(user_id, team, opp, model_features, target_variable, team_year_rounds, opp_year_rounds):
-    with new_session() as db_session:
-        predictor = ResultPredictor(db_session, user_id, team, opp,
-                                    'LinearRegression', 'pcnt_diff',
-                                    model_features,
-                                    target_variable)
-        prediction = predictor.get_prediction(team_year_rounds, opp_year_rounds)
-        return prediction
+    cache_key = KEY.format(request.path, f'{user_id}_{team}_{opp}_{model_features}_{target_variable}_{team_year_rounds}_{opp_year_rounds}'.encode('utf-8'))
+    prediction = cache.get(cache_key)
+    if prediction is None:
+        with new_session() as db_session:
+            predictor = ResultPredictor(db_session, user_id, team, opp,
+                                        'LinearRegression', 'pcnt_diff',
+                                        model_features,
+                                        target_variable)
+            prediction = predictor.get_prediction(team_year_rounds, opp_year_rounds)
+            cache.set(cache_key, prediction, timeout=5 * 60)
+    return prediction
 
 
 @bp.route('/available_features')

@@ -5,6 +5,7 @@ import joblib
 import pandas as pd
 from flask import json
 
+from tipperapi.services.cache import cache
 from tipperapi.schema.prediction_schema import PredictionSchema
 from datascrape.logging_config import LOGGING_CONFIG
 from model import MLModel, Prediction
@@ -13,6 +14,8 @@ from predictions.aggregated_match_stats import get_pcnt_diff, ALL_ROUNDS
 
 logging.config.dictConfig(LOGGING_CONFIG)
 LOGGER = logging.getLogger(__name__)
+
+CACHE_KEY = 'model/{}'
 
 
 class ResultPredictor:
@@ -45,22 +48,30 @@ class ResultPredictor:
         X_opp = df_opp[self.features]
 
         model_record = self.find_model_in_db()
-        model = None
         new_model = False
-        if model_record is not None:
-            file = model_record.file_name
-            if file is not None:
-                try:
-                    model = joblib.load(file)  # TODO - file path fixup
-                except FileNotFoundError as e:
-                    LOGGER.error(e.strerror)
+        # search cache first
+        model = cache.get(CACHE_KEY.format(model_record.id))
         if model is None:
-            # TODO cache models
-            model = ModelBuilder(self.session, "LinearRegression", "pcnt_diff", self.features,
-                                 self.target_variable).build()
-            model_record = self.find_model_in_db()
-            new_model = True
+            # then check for file
+            if model_record is not None:
+                file = model_record.file_name
+                if file is not None:
+                    try:
+                        model = joblib.load(file)
+                    except FileNotFoundError as e:
+                        LOGGER.error(e.strerror)
+            if model is None:
+                # if all else fails, build a new model
+                model = ModelBuilder(self.session, "LinearRegression", "pcnt_diff", self.features,
+                                     self.target_variable).build()
+                model_record = self.find_model_in_db()
+                new_model = True
+        # hopefully we have a model by this point
         if model is not None:
+            # save to cache
+            if model_record.id is not None:
+                cache.set(CACHE_KEY.format(model_record.id), model)
+            # perform prediction
             t = model.predict(X_team.append(X_team.agg(['mean'])).loc[['mean']])[0]
             o = model.predict(X_opp.append(X_opp.agg(['mean'])).loc[['mean']])[0]
             winner = self.team if t > o else self.opponent
@@ -79,12 +90,14 @@ class ResultPredictor:
             schema = PredictionSchema()
             dump_data = schema.dump(prediction)
             return dump_data
+        logging.error(f'Could not build model for {self}')
         return None
 
     def find_model_in_db(self):
         # check DB for matching model and run predict with that
         model_record = self.session.query(MLModel) \
             .filter(MLModel.model_type == self.model_type,
+                    MLModel.model_strategy == self.model_strategy,
                     MLModel.features == sorted(self.features),
                     MLModel.target_variable == self.target_variable,
                     MLModel.active == True).first()
