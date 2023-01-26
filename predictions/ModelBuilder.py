@@ -62,7 +62,7 @@ class ModelBuilder:
                                                           MLModel.features == model_record.features,
                                                           MLModel.target_variable == model_record.target_variable).all()
             for m in existing:
-                m.active = False  # TODO should we delete the file here as well?
+                m.active = False
             self.analyse(lm, X_test, y_test, model_record)
             self.save_to_file(lm, model_record)
             self.save_to_db(model_record)
@@ -71,8 +71,6 @@ class ModelBuilder:
             LOGGER.error(e)
             LOGGER.error(traceback.format_exc())
             return None
-        finally:
-            self.session.close()
 
     def save_to_db(self, model_record):
         self.session.add(model_record)

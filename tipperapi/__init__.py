@@ -41,8 +41,8 @@ def create_app(test_config=None):
     admin_bp.register_blueprint(user_admin.bp)
     admin_bp.register_blueprint(scrape_api.bp)
     admin_bp.register_blueprint(db_mgmt_api.bp)
-    admin_bp.register_blueprint(model_mgmt_api.bp)
-    app.register_blueprint(admin_bp)
+    admin_bp.register_blueprint(model_mgmt_api.bp, cli_group=None)
+    app.register_blueprint(admin_bp, cli_group=None)
 
     api_bp.register_blueprint(ladder_api.bp)
     api_bp.register_blueprint(predict_api.bp)

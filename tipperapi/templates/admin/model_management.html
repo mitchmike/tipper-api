@@ -10,6 +10,8 @@
         <li><a href="{{ url_for('admin.model_mgmt_api.get_current_models') }}">get_current_models</a><br/></li>
         <li><a href="{{ url_for('admin.model_mgmt_api.get_historical_models') }}">get_historical_models</a></li>
         <li><a href="{{ url_for('admin.model_mgmt_api.build_model') }}">build custom model</a></li>
+        <li><a href="{{ url_for('admin.model_mgmt_api.rebuild_active_models') }}">rebuild active models</a></li>
+        <li><a href="{{ url_for('admin.model_mgmt_api.clean_model_files') }}">clean model files</a></li>
     </ul>
     <table class="table table-hover bg-white border">
         <thead class="thead-dark">
@@ -22,6 +24,7 @@
             <th scope="col">score</th>
             <th scope="col">active</th>
             <th scope="col">created_at</th>
+            <th scope="col"></th>
         </tr>
         </thead>
         {% for model in models %}
@@ -34,6 +37,11 @@
                 <td>{{ model.score }}</td>
                 <td>{{ model.active }}</td>
                 <td>{{ model.created_at }}</td>
+                <td>
+                    {% if model.file_name and not model.active %}
+                        <form method="post"><button name="model_id" value={{model.id}} type="submit" formaction="{{url_for('admin.model_mgmt_api.set_active_model')}}">Set Active</button></form>
+                    {% endif %}
+                </td>
             </tr>
         {% endfor %}
     </table>

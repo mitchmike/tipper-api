@@ -58,6 +58,7 @@ def scores_for_different_feature_counts():
     plt.savefig('feature_size_test.png')
     plt.show()
     LOGGER.info(f'Total time taken: {datetime.now() - start_all}')
+    session.close()
 
 
 if __name__ == '__main__':

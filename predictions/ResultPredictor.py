@@ -78,7 +78,6 @@ class ResultPredictor:
             self.session.commit()
             schema = PredictionSchema()
             dump_data = schema.dump(prediction)
-            self.session.close()
             return dump_data
         return None
 
