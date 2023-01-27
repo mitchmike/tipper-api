@@ -1,8 +1,7 @@
 import pytest
 
-from model import Team
 from model.base import Base
-from tipperapi import create_app, db
+from tipperapi import create_app, db, admin_bp, api_bp, app_bp
 
 
 @pytest.fixture()
@@ -18,6 +17,14 @@ def app():
         if 'test' in app.config['SQLALCHEMY_DATABASE_URI']:  # just to avoid accidental deletion
             Base.metadata.drop_all(db.get_db())
 
+    # hack to remove blueprints from child bps - https://github.com/pallets/flask/issues/4786
+    admin_bp._blueprints = []
+    admin_bp._got_registered_once = False
+    api_bp._blueprints = []
+    api_bp._got_registered_once = False
+    app_bp._blueprints = []
+    app_bp._got_registered_once = False
+
 
 @pytest.fixture()
 def client(app):
@@ -27,16 +34,3 @@ def client(app):
 @pytest.fixture()
 def runner(app):
     return app.test_cli_runner()
-
-
-def add_team(app):
-    with app.app_context():
-        team = Team()
-        team.id = 1
-        team.team_identifier = 'richmond-tigers'
-        team.name = 'Tigers'
-        team.city = 'Richmond'
-        team.active_in_competition = True
-        with db.new_session() as db_session:
-            db_session.add(team)
-            db_session.commit()

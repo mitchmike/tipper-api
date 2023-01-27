@@ -1,12 +1,17 @@
 import functools
+import logging.config
 
 from flask import Blueprint, request, flash, url_for, redirect, session, g, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from datascrape.logging_config import LOGGING_CONFIG
 from tipperapi import db
 from model import Team, User
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
+
+logging.config.dictConfig(LOGGING_CONFIG)
+LOGGER = logging.getLogger(__name__)
 
 
 # decorator for views requiring login
@@ -47,11 +52,11 @@ def register():
     if request.method == 'POST':
         error = None
         try:
-            first_name = request.form['first_name']
-            last_name = request.form['last_name']
-            email = request.form['email']
-            password = request.form['password']
-            re_password = request.form['re_password']
+            first_name = request.form.get('first_name')
+            last_name = request.form.get('last_name')
+            email = request.form.get('email')
+            password = request.form.get('password')
+            re_password = request.form.get('re_password')
             if not email:
                 error = 'Email is required.'
             elif not password:
@@ -75,13 +80,13 @@ def register():
                             session["user_id"] = user.id
                         return redirect(url_for('index'))
                 except Exception as e:
-                    print(f'Unexpected error occured while registering user: {e}')
+                    LOGGER.error(f'Unexpected error occured while registering user: {e}')
                     error = 'Unexpected error occured while registering'
             if error is not None:
-                print(f'Failed to register user. error is {error}')
+                LOGGER.error(f'Failed to register user. error is {error}')
                 flash(error)
         except Exception as e:
-            print(f'Encountered exception while processing register request: {e}')
+            LOGGER.error(f'Encountered exception while processing register request: {e}')
 
     return render_template('app/register.html')
 
