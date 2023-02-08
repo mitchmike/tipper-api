@@ -45,10 +45,12 @@ class ResultPredictor:
         X_team = df_team[self.features]
         X_opp = df_opp[self.features]
 
-        model_record = self.find_model_in_db()
         new_model = False
+        model = None
+        model_record = self.find_model_in_db()
         # search cache first
-        model = cache.get(CACHE_KEY.format(model_record.id))
+        if model_record is not None:
+            model = cache.get(CACHE_KEY.format(model_record.id))
         if model is None:
             # then check for file
             if model_record is not None:

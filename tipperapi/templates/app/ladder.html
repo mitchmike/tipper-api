@@ -19,7 +19,7 @@ Ladder
                     <label for="season">Season: </label>
                     <select required autocomplete="off" class="form-control" name="season"  placeholder="Season" style="vertical-align:middle">
                         <option disabled selected value="">Season</option>
-                        {% for s in ['2019','2020','2021','2022','2023'] %}
+                        {% for s in [2019,2020,2021,2022,2023] %}
                             {% if s == season %}
                                 <option selected value="{{ s }}">{{ s }}</option>
                             {% else %}
@@ -48,7 +48,7 @@ Ladder
                 </thead>
                 {% for team in ladder %}
                         <tr id={{team.teamname}} class="clickable-row" style="cursor: pointer;" data-href="/teamdetail?team={{team.teamname}}">
-                            <td style="text-align: end;">{{ team.teamname }}</td>
+                            <td style="text-align: end;">{{ team_map[team.teamname] }}</td>
                             <td>{{ team.wins }}</td>
                             <td>{{ team.losses }}</td>
                             <td>{{ team.draws }}</td>

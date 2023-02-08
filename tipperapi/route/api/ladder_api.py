@@ -1,25 +1,32 @@
 import itertools
+import logging
+from datetime import datetime
 from functools import cmp_to_key
+
 from flask import Blueprint, request
 
-from tipperapi.db import get_db_session_factory
+from datascrape.logging_config import LOGGING_CONFIG
 from model import Game
+from tipperapi import db
+
+MAX_SEASON_ROUNDS = 30
+logging.config.dictConfig(LOGGING_CONFIG)
+LOGGER = logging.getLogger(__name__)
 
 bp = Blueprint('ladder', __name__, url_prefix='/ladder')
 
 
 @bp.route('/')
 def ladder():
-    year = request.args['year']
+    year = request.args.get('year', datetime.now().year)
     return get_ladder(year)
 
 
 def get_ladder(year):
     try:
-        Session = get_db_session_factory()
-        session = Session()
-        games = session.query(Game).filter(Game.year == year)
-        games = games.filter(Game.round_number < 25)  # exclude finals rounds
+        ladder_db_session = db.new_session()
+        games = ladder_db_session.query(Game).filter(Game.year == year)
+        games = games.filter(Game.round_number < MAX_SEASON_ROUNDS)  # exclude finals rounds
         games = games.with_entities(Game.home_team, Game.away_team, Game.winner, Game.home_score, Game.away_score)
 
         # distinct teams
@@ -42,7 +49,7 @@ def get_ladder(year):
         sort_l = sorted(lad, key=cmp_to_key(LadderRung.compare))
         return [rung.__dict__ for rung in sort_l]
     except Exception as e:
-        print(f'Encountered exception while processing ladder request: {e}')
+        LOGGER.error(f'Encountered exception while processing ladder request: {e}')
         return []
 
 

@@ -37,24 +37,8 @@ def create_app(test_config=None, testing=False):
     app.jinja_env.filters["formatpcnt"] = format_pcnt
 
     app.register_blueprint(auth.bp)
-
-    admin_bp.register_blueprint(user_admin.bp)
-    admin_bp.register_blueprint(scrape_api.bp)
-    admin_bp.register_blueprint(db_mgmt_api.bp)
-    admin_bp.register_blueprint(model_mgmt_api.bp, cli_group=None)
     app.register_blueprint(admin_bp, cli_group=None)
-
-    api_bp.register_blueprint(ladder_api.bp)
-    api_bp.register_blueprint(predict_api.bp)
-    api_bp.register_blueprint(select_api.bp)
     app.register_blueprint(api_bp)
-
-    app_bp.register_blueprint(auth.bp)
-    app_bp.register_blueprint(ladder.bp)
-    app_bp.register_blueprint(teamdetail.bp)
-    app_bp.register_blueprint(odds.bp)
-    app_bp.register_blueprint(profile.bp)
-    app_bp.register_blueprint(predict.bp)
     app.register_blueprint(app_bp)
 
     cache.init_app(app, config=app.config)

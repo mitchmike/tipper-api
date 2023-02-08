@@ -21,7 +21,7 @@ class User(Base):
     user_follows_team = relationship('Team', back_populates='followers')
     prediction_for_user = relationship('Prediction', back_populates='prediction_for_user')
 
-    def __init__(self, first_name, last_name, email, password):
+    def __init__(self, first_name=None, last_name=None, email=None, password=None):
         self.first_name = first_name
         self.last_name = last_name
         self.email = email
@@ -32,7 +32,7 @@ class User(Base):
 
     def __repr__(self):
         return "<User(id='%s', first_name='%s', last_name='%s', " \
-                "email='%s', roles='%s', follows_team='%s'," \
+               "email='%s', roles='%s', follows_team='%s'," \
                "created_at='%s', updated_at='%s')>" % (self.id, self.first_name,
                                                        self.last_name, self.email, self.roles, self.follows_team,
                                                        self.created_at, self.updated_at)

@@ -24,16 +24,16 @@ def get_db():
     return g.engine
 
 
-def get_db_session_factory():
+def get_db_session_factory(expire_on_commit=True):
     if 'session_maker' not in g:
         engine = get_db()
-        g.session_maker = sessionmaker(bind=engine)
+        g.session_maker = sessionmaker(bind=engine, expire_on_commit=expire_on_commit)
     return g.session_maker
 
 
-def new_session():
+def new_session(expire_on_commit=True):
     if 'session' not in g:
-        session_maker = get_db_session_factory()
+        session_maker = get_db_session_factory(expire_on_commit)
         g.session = session_maker()
     return g.session
 

@@ -1,5 +1,5 @@
 import pytest
-from flask import session, g
+from flask import session
 from werkzeug.security import generate_password_hash
 
 from model import User, Team
