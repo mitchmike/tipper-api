@@ -19,7 +19,7 @@ class Game(Base):
     updated_at = Column(DateTime)
     match_stats_player = relationship("MatchStatsPlayer", back_populates="game")
 
-    def __init__(self, game_id, home_team, away_team, year, round_number):
+    def __init__(self, game_id=None, home_team=None, away_team=None, year=None, round_number=None):
         self.id = game_id
         self.home_team = home_team
         self.away_team = away_team

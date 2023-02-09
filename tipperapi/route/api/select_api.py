@@ -110,7 +110,7 @@ def select_matchstats():
             accept_request = True
             break
     if not accept_request:
-        return f"Endpoint requires at least one of the following request params: {required_param_opts}"
+        return f"Endpoint requires at least one of the following request params: {required_param_opts}", 400
     with new_session() as session:
         data = select_data(session, MatchStatsPlayer, ('id', 'team', 'game_id'), request.args)
         data = data.order_by('id').all()
@@ -121,10 +121,10 @@ def select_matchstats():
 
 @bp.route('/pcntdiff')
 def select_pcnt_diff():
-    for opt in ['team', 'year']:
+    required_params = ['team', 'year']
+    for opt in required_params:
         if opt not in request.args:
-            print("required params not supplied")
-            return {}
+            return f"Required params not supplied: {required_params}", 400
     team = request.args.get('team')
     year = safe_int(request.args.get('year'))
     with new_session() as session:
