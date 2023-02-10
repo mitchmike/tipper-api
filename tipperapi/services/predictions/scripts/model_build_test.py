@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from datascrape.logging_config import LOGGING_CONFIG
-from predictions.ModelBuilder import ModelBuilder
+from tipperapi.services.predictions.ModelBuilder import ModelBuilder
 
 from random import random
 

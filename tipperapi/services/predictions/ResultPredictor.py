@@ -9,8 +9,8 @@ from tipperapi.services.cache import cache
 from tipperapi.schema.prediction_schema import PredictionSchema
 from datascrape.logging_config import LOGGING_CONFIG
 from model import MLModel, Prediction
-from predictions.ModelBuilder import ModelBuilder
-from predictions.aggregated_match_stats import get_pcnt_diff, ALL_ROUNDS
+from tipperapi.services.predictions.ModelBuilder import ModelBuilder
+from tipperapi.services.predictions.aggregated_match_stats import get_pcnt_diff, ALL_ROUNDS
 
 logging.config.dictConfig(LOGGING_CONFIG)
 LOGGER = logging.getLogger(__name__)

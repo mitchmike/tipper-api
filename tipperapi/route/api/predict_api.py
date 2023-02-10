@@ -1,8 +1,9 @@
 from flask import jsonify, Blueprint, request
 
-from predictions.ModelBuilder import ModelBuilder
-from predictions.ResultPredictor import ResultPredictor
-from predictions.aggregated_match_stats import ALL_ROUNDS
+from tipperapi.services.predictions.ModelBuilder import ModelBuilder
+from tipperapi.services.predictions.ResultPredictor import ResultPredictor
+
+from tipperapi.services.predictions.aggregated_match_stats import ALL_ROUNDS
 from tipperapi.db import new_session
 from tipperapi.route.admin.db_mgmt_api import safe_int
 from tipperapi.services.cache import cached, cache

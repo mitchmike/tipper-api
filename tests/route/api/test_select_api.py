@@ -3,6 +3,7 @@ import datetime
 import pandas
 
 from model import Team, Game, PlayerFantasy, Player, MatchStatsPlayer
+from tests.db_test_util import add_data, dict_equals, find_obj_in_json, get_file_resource_path
 from tipperapi import db
 from tipperapi.route.api import select_api
 from tipperapi.route.api.select_api import select_data, get_games
@@ -144,7 +145,7 @@ def test_select_players(app, client):
 
 
 def add_games(app, limit=None):
-    df = pandas.read_csv('games.csv', header=None)
+    df = pandas.read_csv(get_file_resource_path('games.csv'), header=None)
     df = df.fillna(0)
     data = df.values.tolist()
     i = 1
@@ -153,35 +154,3 @@ def add_games(app, limit=None):
             return
         add_data(app, Game, GAME_COL_NAMES, line)
         i = i + 1
-
-
-def add_data(app, model, fields, values):
-    with app.app_context():
-        obj = model()
-        for field, value in zip(fields, values):
-            setattr(obj, field, value)
-        with db.new_session(expire_on_commit=False) as db_s:
-            db_s.add(obj)
-            db_s.commit()
-        return obj
-
-
-def find_obj_in_json(json, match_obj, match_field):
-    for obj in json:
-        if obj[match_field] == match_obj[match_field]:
-            return obj
-
-
-def dict_equals(json_obj, obj, ignore_fields_from_json):
-    if obj is None:
-        return False
-    json_keys = set(json_obj.keys())
-    [json_keys.discard(key) for key in ignore_fields_from_json]
-    obj_keys = set(obj.keys())
-    [obj_keys.discard(key) for key in ignore_fields_from_json]
-    if len(json_keys.intersection(obj_keys)) != len(obj_keys):
-        return False
-    for k in obj_keys:
-        if obj[k] != json_obj[k]:
-            return False
-    return True

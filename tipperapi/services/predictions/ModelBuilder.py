@@ -7,7 +7,7 @@ import logging.config
 
 import joblib
 from dotenv import load_dotenv
-from flask import json, current_app
+from flask import json, current_app, url_for
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import numpy as np
@@ -18,7 +18,7 @@ from sklearn.linear_model import LinearRegression
 from datascrape.logging_config import LOGGING_CONFIG
 from model import Team, MLModel, MatchStatsPlayer
 from model.base import Base
-from predictions.aggregated_match_stats import get_pcnt_diff, ALL_ROUNDS
+from tipperapi.services.predictions.aggregated_match_stats import get_pcnt_diff, ALL_ROUNDS
 
 logging.config.dictConfig(LOGGING_CONFIG)
 LOGGER = logging.getLogger(__name__)

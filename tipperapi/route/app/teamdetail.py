@@ -1,6 +1,5 @@
 import os
 
-import requests
 from flask import Blueprint, request, render_template
 from sqlalchemy import or_
 
@@ -8,7 +7,7 @@ from tipperapi import db
 from tipperapi.route.auth import login_required
 from tipperapi.services.utils import safe_int
 from model import Team, Game
-from predictions.aggregated_match_stats import ALL_ROUNDS, get_pcnt_diff
+from tipperapi.services.predictions.aggregated_match_stats import ALL_ROUNDS, get_pcnt_diff
 
 DEFAULT_YEAR = 2021
 

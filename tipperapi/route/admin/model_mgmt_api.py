@@ -7,11 +7,12 @@ from sqlalchemy import desc
 
 from datascrape.logging_config import LOGGING_CONFIG
 from model.ml_model import MLModel
-from predictions.ModelBuilder import ModelBuilder
-from predictions.scripts.cleanup_model_files import cleanup
+from tipperapi.services.predictions.ModelBuilder import ModelBuilder
+
 from tipperapi import db
 from tipperapi.db import new_session
 from tipperapi.route.auth import admin_required
+from tipperapi.services.predictions.scripts.cleanup_model_files import cleanup
 
 logging.config.dictConfig(LOGGING_CONFIG)
 LOGGER = logging.getLogger(__name__)

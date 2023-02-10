@@ -13,7 +13,7 @@ from tipperapi.schema.player.player_injury import PlayerInjurySchema
 from tipperapi.schema.supercoach_schema import SuperCoachSchema
 from tipperapi.schema.team_schema import TeamSchema
 from model import Game, Player, PlayerFantasy, PlayerSupercoach, MatchStatsPlayer, Team
-from predictions.aggregated_match_stats import get_pcnt_diff, ALL_ROUNDS
+from tipperapi.services.predictions.aggregated_match_stats import get_pcnt_diff, ALL_ROUNDS
 
 bp = Blueprint('select_api', __name__, url_prefix='/select')
 MAX_GAMES_FOR_STATS = 30

@@ -1,6 +1,7 @@
 from werkzeug.security import generate_password_hash
 
-from model import Team, Game, User
+from model import User
+from tests.db_test_util import create_team, create_game
 from tipperapi import db
 from tipperapi.route.api.ladder_api import get_ladder
 
@@ -71,25 +72,6 @@ def assert_team_position(result, teamname, wins, losses, draws, pf, pa, position
     assert res['draws'] == draws
     assert res['pf'] == pf
     assert res['pa'] == pa
-
-
-def create_team(tid=1, city='Richmond', name='Tigers', team_identifier='richmond-tigers', active=True):
-    team = Team()
-    team.id = tid
-    team.team_identifier = team_identifier
-    team.name = name
-    team.city = city
-    team.active_in_competition = active
-    return team
-
-
-def create_game(game_id=1, home_team='richmond-tigers', away_team='geelong-cats', home_score=100, away_score=50,
-                winner='richmond-tigers'):
-    game = Game(game_id, home_team, away_team, 2021, 1)
-    game.home_score = home_score
-    game.away_score = away_score
-    game.winner = winner
-    return game
 
 
 def add_teams_and_game(app):

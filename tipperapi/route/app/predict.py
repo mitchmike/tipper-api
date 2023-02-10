@@ -3,7 +3,7 @@ import os
 from flask import Blueprint, render_template, request, flash, session, jsonify
 
 from model import Team
-from predictions.ModelBuilder import ModelBuilder
+from tipperapi.services.predictions.ModelBuilder import ModelBuilder
 from tipperapi import db
 from tipperapi.route.api.predict_api import get_prediction
 from tipperapi.route.api.select_api import get_recent_year_rounds, get_games
