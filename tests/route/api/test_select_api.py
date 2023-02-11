@@ -1,24 +1,22 @@
 import datetime
 
-import pandas
-
-from model import Team, Game, PlayerFantasy, Player, MatchStatsPlayer
-from tests.db_test_util import add_data, dict_equals, find_obj_in_json, get_file_resource_path
+from model import PlayerFantasy, Player, MatchStatsPlayer
+from tests.db_test_util import *
 from tipperapi import db
 from tipperapi.route.api import select_api
 from tipperapi.route.api.select_api import select_data, get_games
 
-TEAM_COL_NAMES = ['id', 'city', 'name', 'team_identifier', 'active_in_competition']
-GAME_COL_NAMES = ['id', 'home_team', 'away_team', 'venue', 'crowd', 'home_score', 'away_score', 'winner', 'year',
-                  'round_number']
-
 
 def test_select_teams(app, client):
-    add_data(app, Team, TEAM_COL_NAMES, [49, 'North Melbourne', 'Kangaroos', 'kangaroos', True])
-    add_data(app, Team, TEAM_COL_NAMES, [46, 'Greater Western Sydney', 'Giants', 'greater-western-sydney-giants'])
-    add_data(app, Team, TEAM_COL_NAMES, [45, 'Gold Coast', 'Suns', 'gold-coast-suns'])
+    add_data_array(app, Team, TEAM_COL_NAMES,
+                   [
+                       [49, 'North Melbourne', 'Kangaroos', 'kangaroos', True],
+                       [46, 'Greater Western Sydney', 'Giants', 'greater-western-sydney-giants'],
+                       [45, 'Gold Coast', 'Suns', 'gold-coast-suns'],
+                       [48, 'Melbourne', 'Demons', 'melbourne-demons']
+                   ]
+                   )
     freo = add_data(app, Team, TEAM_COL_NAMES, [43, 'Fremantle', 'Dockers', 'fremantle-dockers'])
-    add_data(app, Team, TEAM_COL_NAMES, [48, 'Melbourne', 'Demons', 'melbourne-demons'])
     with client:
         response = client.get('/api/select/teams')
         json = response.json
@@ -40,10 +38,10 @@ def test_get_recent_year_rounds(app):
 
 
 def test_select_data(app):
-    g1 = add_data(app, Game, GAME_COL_NAMES,
-                  [9721, 'carlton-blues', 'richmond-tigers', 'MCG', 85016, 64, 97, 'richmond-tigers', 2019, 1])
     with app.app_context():
         with db.new_session() as dbs:
+            g1 = add_data(app, Game, GAME_COL_NAMES,
+                          [9721, 'carlton-blues', 'richmond-tigers', 'MCG', 85016, 64, 97, 'richmond-tigers', 2019, 1])
             assert len(select_data(dbs, Game, ('id', 'home_team', 'away_team', 'year'), {'year': 2019}).all()) == 1
             assert len(select_data(dbs, Game, ('id', 'home_team', 'away_team', 'year'), {'year': 2020}).all()) == 0
             assert len(select_data(dbs, Game, ('id', 'home_team', 'away_team', 'year'),
@@ -142,15 +140,3 @@ def test_select_players(app, client):
         assert len(r3.json) == 1
         assert dict_equals(r3.json[0], p1.as_dict(), ['injuries', 'DOB'])
         assert r3.json[0]['DOB'] == str(p1.DOB)
-
-
-def add_games(app, limit=None):
-    df = pandas.read_csv(get_file_resource_path('games.csv'), header=None)
-    df = df.fillna(0)
-    data = df.values.tolist()
-    i = 1
-    for line in data:
-        if limit is not None and i > limit:
-            return
-        add_data(app, Game, GAME_COL_NAMES, line)
-        i = i + 1

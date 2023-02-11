@@ -1,7 +1,10 @@
 from sqlalchemy import or_, func
+import logging.config
 
-
+from datascrape.logging_config import LOGGING_CONFIG
 from model import Game, MatchStatsPlayer
+logging.config.dictConfig(LOGGING_CONFIG)
+LOGGER = logging.getLogger(__name__)
 
 ALL_ROUNDS = -1
 
@@ -29,7 +32,9 @@ def get_pcnt_diff(session, team, year_rounds):
                 col_offset = 2  # game_id and teamname cols
                 goals_i = MatchStatsPlayer.summable_cols().index('goals') + col_offset
                 behinds_i = MatchStatsPlayer.summable_cols().index('behinds') + col_offset
-                score = teamsums[goals_i] * 6 + teamsums[behinds_i]
+                score = None
+                if teamsums[goals_i] is not None and teamsums[behinds_i] is not None:
+                    score = (teamsums[goals_i] * 6 + teamsums[behinds_i])
                 pcntdiff = {'game_id': game_id, 'year': game.year, 'round_number': game.round_number,
                             'team_id': teamsums.team, 'opponent': opponentsums.team,
                             'home_game': 1 if teamsums.team == game.home_team else 0,
@@ -37,13 +42,14 @@ def get_pcnt_diff(session, team, year_rounds):
                             'score': score}
                 i = 0
                 for ts, os in zip(teamsums[2:], opponentsums[2:]):
-                    pcntdiff[MatchStatsPlayer.summable_cols()[i]] = 0 if os == 0 else (ts - os) / os
+                    if ts is not None and os is not None:
+                        pcntdiff[MatchStatsPlayer.summable_cols()[i]] = 0.0 if os == 0 else (ts - os) / os
                     i += 1
                 pcntdiffs.append(pcntdiff)
         pcntdiffs = sorted(pcntdiffs, key=lambda i: int(i['round_number']))
         return pcntdiffs
     except Exception as e:
-        print(e)
+        LOGGER.error(f'Exception occured while calculating pcnt diff stats: {e}')
         return {}
 
 
