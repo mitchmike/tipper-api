@@ -1,5 +1,5 @@
 import datetime
-import logging
+import logging.config
 
 import joblib
 import pandas as pd

@@ -7,7 +7,7 @@ import logging.config
 
 import joblib
 from dotenv import load_dotenv
-from flask import json, current_app, url_for
+from flask import json, current_app
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import numpy as np
@@ -137,5 +137,5 @@ if __name__ == '__main__':
     Session = sessionmaker(bind=db_engine)
     session = Session()
     all_features = ModelBuilder.available_features()
-    ModelBuilder(session, "LinearRegression", "pdnt_diff", list(all_features), 'score').build()
+    ModelBuilder(session, "LinearRegression", "pcnt_diff", list(all_features), 'score').build()
     LOGGER.info(f'Total time taken: {datetime.now() - start_all}')

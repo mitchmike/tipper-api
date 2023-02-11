@@ -28,10 +28,10 @@ def admin_required(view):
     @functools.wraps(view)
     def wrapped_view(*args, **kwargs):
         if g.user is None:
-            return redirect(url_for('auth.admin_login', next=request.url))
+            return redirect(url_for('auth.login', next=request.url))
         if 'ROOT' not in g.user.roles and 'ADMIN' not in g.user.roles:
             flash("admin rights required")
-            return redirect(request.referrer)
+            return redirect(url_for('auth.login', next=request.url))
         return view(*args, **kwargs)
     return wrapped_view
 
@@ -78,7 +78,7 @@ def register():
                         flash('Registration successful')
                         if user.id is not None:
                             session["user_id"] = user.id
-                        return redirect(url_for('index'))
+                        return redirect(request.args.get('next', url_for('index')))
                 except Exception as e:
                     LOGGER.error(f'Unexpected error occured while registering user: {e}')
                     error = 'Unexpected error occured while registering'
@@ -91,29 +91,15 @@ def register():
     return render_template('app/register.html')
 
 
-@bp.route('/admin_login', methods=('GET', 'POST'))
-def admin_login():
-    if request.method == 'GET':
-        session['next'] = request.args.get('next', None)
-    if request.method == 'POST':
-        next_url = session.get('next')
-        user = login()
-        if 'id' in user and ('ADMIN' in user['roles'] or 'ROOT' in user['roles']):
-            if next_url is not None:
-                return redirect(next_url)
-            return redirect(url_for('admin.index'))
-        flash('Login failed. Admin permission required')
-    return render_template('admin/auth/login.html')
-
-
 @bp.route('/login', methods=('GET', 'POST'))
 def login():
     if request.method == "GET":
+        session['next'] = request.args.get('next', None)
         return render_template("app/login.html")
     email = request.form['email']
     password = request.form['password']
-    Session = db.get_db_session_factory()
-    db_session = Session()
+    next_url = session.pop('next', None)
+    db_session = db.new_session()
     user = db_session.query(User).filter(User.email == email).first()
     db_session.close()
     if user is not None and check_password_hash(user.password, password):
@@ -123,9 +109,10 @@ def login():
         team_id = [team.team_identifier for team in teams if team.id == user.follows_team]
         if len(team_id) > 0:
             session['team_identifier'] = team_id[0]
-        return redirect('/')
+        return redirect(next_url if next_url is not None else '/')
     else:
-        return render_template('app/login.html', error='Login failed')
+        session['next'] = next_url  # remember in case login fails
+        return render_template('app/login.html', next=request.args.get('next'), error='Login failed')
 
 
 @bp.route('/logout')

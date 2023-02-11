@@ -29,12 +29,12 @@
                 <td>{{ user.created_at }}</td>
                 <td>{{ user.updated_at }}</td>
                 <td>
-                    <button name="user_id" value={{user.id}} type="submit" formmethod="get" formaction="{{url_for('admin.users.detail')}}">Edit</button>
-                    <button name="id" value={{user.id}} type="submit" formmethod="post" formaction="{{url_for('admin.users.delete')}}">Delete</button>
+                    <button name="user_edit_id" value={{user.id}} type="submit" formmethod="get" formaction="{{url_for('admin.users.detail')}}">Edit</button>
+                    <button name="user_delete_id" value={{user.id}} type="submit" formmethod="post" formaction="{{url_for('admin.users.delete')}}">Delete</button>
                 </td>
             </tr>
         {% endfor %}
     </table>
-    <input value="Create user" type="submit" formaction="{{url_for('admin.users.create')}}"/>
+    <button value="Create user" type="submit" formaction="{{url_for('admin.users.create')}}">Create user</button>
 </form>
 {% endblock %}

@@ -31,19 +31,21 @@ def test_logout(app, client):
 
 
 @pytest.mark.parametrize("first_name, last_name, email, password, re_password, flash, result",
-                          [('b', 'b', 'b', 'b', 'b', 'Registration successful', True),
-                           ('b', 'b', 'a', 'b', 'b', 'already registered', False),  # existing email conflict
-                           (None, 'b', 'b', 'b', 'b', 'Registration successful', True),  # TODO fail this
-                           ('b', None, 'b', 'b', 'b', 'Registration successful', True),  # TODO fail this
-                           ('b', 'b', None, 'b', 'b', 'Email is required', False),
-                           ('b', 'b', 'b', None, 'b', 'Password is required', False),
-                           ('b', 'b', 'b', 'a', 'b', 'not matching', False),  # passwords dont match
-                           ('b', 'b', 'b', 'b', 'a', 'not matching', False),
-                           ])
+                         [('b', 'b', 'b', 'b', 'b', 'Registration successful', True),
+                          ('b', 'b', 'a', 'b', 'b', 'already registered', False),  # existing email conflict
+                          (None, 'b', 'b', 'b', 'b', 'Registration successful', True),  # TODO fail this
+                          ('b', None, 'b', 'b', 'b', 'Registration successful', True),  # TODO fail this
+                          ('b', 'b', None, 'b', 'b', 'Email is required', False),
+                          ('b', 'b', 'b', None, 'b', 'Password is required', False),
+                          ('b', 'b', 'b', 'a', 'b', 'not matching', False),  # passwords dont match
+                          ('b', 'b', 'b', 'b', 'a', 'not matching', False),
+                          ])
 def test_register(app, client, first_name, last_name, email, password, re_password, flash, result):
     add_user_and_team(app)  # existing user
     with client:
-        response = client.post('/auth/register', data={'first_name': first_name, 'last_name': last_name, 'email': email, 'password': password, 're_password': re_password}, follow_redirects=True)
+        response = client.post('/auth/register', data={'first_name': first_name, 'last_name': last_name, 'email': email,
+                                                       'password': password, 're_password': re_password},
+                               follow_redirects=True)
 
         if result:
             assert session['user_id'] == 2
