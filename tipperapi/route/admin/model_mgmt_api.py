@@ -12,6 +12,7 @@ from tipperapi.services.predictions.ModelBuilder import ModelBuilder
 from tipperapi import db
 from tipperapi.db import new_session
 from tipperapi.route.auth import admin_required
+from tipperapi.services.predictions.PcntDiffReader import PcntDiffReader
 from tipperapi.services.predictions.scripts.cleanup_model_files import cleanup
 
 logging.config.dictConfig(LOGGING_CONFIG)
@@ -24,7 +25,6 @@ bp = Blueprint('model_mgmt_api', __name__, url_prefix='/model')
 @admin_required
 def model_mgmt_home():
     # populate a table of existing models and their properties
-    # TODO add button to set model as active
     models = []
     return render_template("admin/model_management.html", models=models)
 
@@ -63,7 +63,8 @@ def build_model():
     model_strategy = request.form.get('model_strategy')
     model_features = request.form.getlist('feature')
     target_variable = request.form.get('target_variable')
-    model = ModelBuilder(new_session(), model_type, model_strategy, model_features, target_variable).build()
+    model = ModelBuilder(new_session(), model_type, model_strategy, model_features, target_variable)
+    model.build(PcntDiffReader())
     if model is None:
         flash(f'model not built due to unexpected error. see logs for details')
     return redirect(url_for('admin.model_mgmt_api.get_historical_models'))

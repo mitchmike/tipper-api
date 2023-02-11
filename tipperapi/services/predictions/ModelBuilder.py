@@ -18,7 +18,7 @@ from sklearn.linear_model import LinearRegression
 from datascrape.logging_config import LOGGING_CONFIG
 from model import Team, MLModel, MatchStatsPlayer
 from model.base import Base
-from tipperapi.services.predictions.aggregated_match_stats import get_pcnt_diff, ALL_ROUNDS
+from tipperapi.services.predictions.PcntDiffReader import PcntDiffReader
 
 logging.config.dictConfig(LOGGING_CONFIG)
 LOGGER = logging.getLogger(__name__)
@@ -35,13 +35,13 @@ class ModelBuilder:
         self.target_variable = target_variable
         self.model_file_path = current_app.config['MODEL_FILE_PATH']
 
-    def build(self):
+    def build(self, reader=PcntDiffReader()):
         LOGGER.info("Starting model build")
         data = []
         try:
-            teams = self.session.query(Team).all()
-            for team in teams:
-                for game in get_pcnt_diff(self.session, team.team_identifier, [(2021, ALL_ROUNDS), (2022, ALL_ROUNDS)]):
+            team_ids = self.get_team_ids()
+            for team_identifier in team_ids:
+                for game in reader.read(self.session, team_identifier):
                     data.append(game)
             df = pd.read_json(json.dumps(data))
             X = df[self.features]
@@ -71,6 +71,9 @@ class ModelBuilder:
             LOGGER.error(e)
             LOGGER.error(traceback.format_exc())
             return None
+
+    def get_team_ids(self):
+        return self.session.query(Team).with_entities(Team.team_identifier).all()
 
     def save_to_db(self, model_record):
         self.session.add(model_record)

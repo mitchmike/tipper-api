@@ -5,6 +5,7 @@ import pandas
 from model import Game, Team
 from tipperapi import db
 
+USER_COL_NAMES = ['id', 'email', 'password', 'roles']
 TEAM_COL_NAMES = ['id', 'city', 'name', 'team_identifier', 'active_in_competition']
 GAME_COL_NAMES = ['id', 'home_team', 'away_team', 'venue', 'crowd', 'home_score', 'away_score', 'winner', 'year',
                   'round_number']

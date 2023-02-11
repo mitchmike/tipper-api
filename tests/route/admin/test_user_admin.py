@@ -1,15 +1,14 @@
 from db_test_util import *
 from model import User
 
-USER_COL_NAMES = ['id', 'email', 'password', 'roles']
 
 
 def test_admin_required(app, client):
     add_data(app, User, USER_COL_NAMES, [1, 'email', 'p', []])
     add_data(app, User, USER_COL_NAMES, [2, 'email2', 'p', ['ADMIN']])
+    with client.session_transaction() as pre_session:
+        pre_session['user_id'] = 1
     with client:
-        with client.session_transaction() as pre_session:
-            pre_session['user_id'] = 1
         response = client.get("/admin", follow_redirects=True)
         assert response.request.path == "/auth/login"
         assert len(response.history) == 2

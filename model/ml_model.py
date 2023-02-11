@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy import Column, Integer, String, DateTime, Sequence, ARRAY, Float, Boolean, JSON
 from sqlalchemy.orm import relationship
 
@@ -17,6 +19,10 @@ class MLModel(Base):
     created_at = Column(DateTime, nullable=False)
     active = Column(Boolean, nullable=False)
     prediction_for_model = relationship('Prediction', back_populates='prediction_for_model')
+
+    def __init__(self):
+        self.features = []
+        self.created_at = datetime.now()
 
     def __repr__(self):
         return "<MLModel(id='%s', model_type='%s', model_strategy='%s', " \
