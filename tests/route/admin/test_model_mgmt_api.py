@@ -1,19 +1,12 @@
-import pytest
+import json
+
 from werkzeug.datastructures import ImmutableMultiDict
 
 from db_test_util import *
-from model import User, MLModel
+from model import MLModel
 from tipperapi.route.admin import model_mgmt_api
 from tipperapi.services.predictions.ModelBuilder import ModelBuilder
 from tipperapi.services.predictions.PcntDiffReader import PcntDiffReader
-
-
-@pytest.fixture()
-def admin_user(app, client):
-    admin_user = add_data(app, User, USER_COL_NAMES, [1, 'email', 'p', ['ADMIN']])
-    with client.session_transaction() as pre_session:
-        pre_session['user_id'] = admin_user.id
-    return admin_user
 
 
 def test_model_mgmt_home(app, client, admin_user):
@@ -77,7 +70,7 @@ def test_post_build_model(app, client, admin_user, monkeypatch):
     data = ImmutableMultiDict(
         [('hidden', ''), ('model_type', 'LinearRegression'), ('model_strategy', 'pcnt_diff'), ('feature', 'kicks'),
          ('feature', 'handballs'), ('target_variable', 'score')])
-    monkeypatch.setattr(PcntDiffReader, "read", lambda *args, **kwargs: JSON_PCNT_DIFF)
+    monkeypatch.setattr(PcntDiffReader, "read", lambda *args, **kwargs: get_pcnt_diff_json())
     monkeypatch.setattr(ModelBuilder, "get_team_ids", lambda *args, **kwargs: ['kangaroos'])
     monkeypatch.setattr(ModelBuilder, "save_to_file", lambda *args, **kwargs: None)  # TODO - should stop this method from running in all tests
     with client:
@@ -131,8 +124,7 @@ def test_rebuild(app, monkeypatch):
                        ['LM', 'pcntdiff', ['kicks'], 'score', True]
                    ]
                    )
-
-        monkeypatch.setattr(PcntDiffReader, "read", lambda *args, **kwargs: JSON_PCNT_DIFF)
+        monkeypatch.setattr(PcntDiffReader, "read", lambda *args, **kwargs: get_pcnt_diff_json())
         monkeypatch.setattr(ModelBuilder, "get_team_ids", lambda *args, **kwargs: ['kangaroos'])
         monkeypatch.setattr(ModelBuilder, "save_to_file", lambda *args, **kwargs: None)
         model_mgmt_api.rebuild()
@@ -144,53 +136,9 @@ def test_rebuild(app, monkeypatch):
             assert [model for model in models if model.id == 3][0].active
 
 
-JSON_PCNT_DIFF = [
-    {
-        "game_id": 10333,
-        "year": 2021,
-        "round_number": 1,
-        "team_id": "kangaroos",
-        "opponent": "port-adelaide-power",
-        "home_game": 1,
-        "win": 0,
-        "score": 63,
-        "kicks": -0.1572052401746725,
-        "handballs": 0.07534246575342465,
-        "disposals": -0.06666666666666667,
-        "marks": -0.11494252873563218,
-        "goals": -0.47058823529411764,
-        "behinds": -0.3076923076923077
-    },
-    {
-        "game_id": 10550,
-        "year": 2022,
-        "round_number": 1,
-        "team_id": "kangaroos",
-        "opponent": "hawthorn-hawks",
-        "home_game": 0,
-        "win": 0,
-        "score": 56,
-        "kicks": 0.018779342723004695,
-        "handballs": -0.19480519480519481,
-        "disposals": -0.07084468664850137,
-        "marks": 0.052083333333333336,
-        "goals": -0.2727272727272727,
-        "behinds": -0.1111111111111111
-    },
-    {
-        "game_id": 10341,
-        "year": 2021,
-        "round_number": 2,
-        "team_id": "kangaroos",
-        "opponent": "gold-coast-suns",
-        "home_game": 0,
-        "win": 0,
-        "score": 37,
-        "kicks": -0.3047945205479452,
-        "handballs": 0.11486486486486487,
-        "disposals": -0.16363636363636364,
-        "marks": -0.2956521739130435,
-        "goals": -0.6428571428571429,
-        "behinds": -0.46153846153846156
-    }
-]
+def get_pcnt_diff_json():
+    with open(get_file_resource_path('pcnt_diff_data.json')) as json_file:
+        json_pcnt_diff = json.load(json_file)
+        return json_pcnt_diff
+
+

@@ -34,17 +34,13 @@ def teamdetail():
         return render_template("app/teamdetail.html", teamslist=teams)
 
     # team detail
-    team_detail = session.query(Team).filter(Team.team_identifier == team).first()
-    # team_detail = requests.get(f'{serverEndpoint}/select/teams?team_identifier={team}').json()
+    team_detail = get_team(session, team)
 
     # recent games data
-    games = session.query(Game).filter(Game.year == year, or_(Game.home_team == team, Game.away_team == team)).all()
-    # games = requests.get(f'{serverEndpoint}/select/games?year={year}&team={team}').json()
-    games = sorted(games, key=lambda i: safe_int(i.round_number), reverse=True)
-    games = games[:DISPLAY_X_GAMES]
+    games = get_games(session, team, year)
 
     # get raw data for chart
-    pcnt_diff_stats = get_pcnt_diff(session, team, [(year, ALL_ROUNDS)])
+    pcnt_diff_stats = get_pcnt_diff_for_chart(session, team, year)
     # pcnt_diff_stats = requests.get(f'{serverEndpoint}/select/pcntdiff?year={year}&team={team}').json()
     if len(pcnt_diff_stats) == 0:
         available_stats = []
@@ -79,3 +75,18 @@ def teamdetail():
                            availablestats=available_stats, selectedstats=selected_stats,
                            scrollPos=scroll_pos, season=year
                            )
+
+
+def get_pcnt_diff_for_chart(session, team, year):
+    return get_pcnt_diff(session, team, [(year, ALL_ROUNDS)])
+
+
+def get_games(session, team, year):
+    games = session.query(Game).filter(Game.year == year, or_(Game.home_team == team, Game.away_team == team)).all()
+    games = sorted(games, key=lambda i: safe_int(i.round_number), reverse=True)
+    games = games[:DISPLAY_X_GAMES]
+    return games
+
+
+def get_team(session, team):
+    return session.query(Team).filter(Team.team_identifier == team).first()

@@ -5,8 +5,7 @@ from flask import Blueprint, render_template, request, flash, session, jsonify
 from model import Team
 from tipperapi.services.predictions.ModelBuilder import ModelBuilder
 from tipperapi import db
-from tipperapi.route.api.predict_api import get_prediction
-from tipperapi.route.api.select_api import get_recent_year_rounds, get_games
+from tipperapi.route.api import select_api, predict_api
 from tipperapi.route.auth import login_required
 from tipperapi.services.utils import safe_int
 
@@ -32,7 +31,7 @@ def predict():
     form_detail['features'] = features
     game_count = safe_int(request.form.get('game_count', DEFAULT_GAME_COUNT))
     form_detail['game_count'] = game_count
-    recent_year_rounds = get_recent_year_rounds(game_count)
+    recent_year_rounds = select_api.get_recent_year_rounds(game_count)
     team_year_rounds = recent_year_rounds
     opp_year_rounds = recent_year_rounds
     prediction = None
@@ -53,7 +52,7 @@ def predict():
         elif target_variable is None:
             flash('No target_variable selected for model')
         elif team is not None and opp is not None and len(team_year_rounds) > 0 and len(opp_year_rounds) > 0:
-            prediction = get_prediction(session.get('user_id'), team, opp, selected_features, target_variable, team_year_rounds, opp_year_rounds)
+            prediction = predict_api.get_prediction(session.get('user_id'), team, opp, selected_features, target_variable, team_year_rounds, opp_year_rounds)
     form_detail['team_year_rounds'] = team_year_rounds
     form_detail['opp_year_rounds'] = opp_year_rounds
     form_detail['default_target_var'] = 'score'
@@ -70,8 +69,8 @@ def recent_games():
 
 
 def get_recent_games(team, count):
-    year_rounds = get_recent_year_rounds(count)
-    team_games = get_games({'team': team, 'lastXRounds': count})
+    year_rounds = select_api.get_recent_year_rounds(count)
+    team_games = select_api.get_games({'team': team, 'lastXRounds': count})
     result = []
     for yr in year_rounds:
         y = yr[0]
@@ -87,5 +86,5 @@ def get_recent_games(team, count):
 
 
 def parse_year_rounds(string_year_rounds):
-    # convert ['2022,52', '2022,51'] to [(2022,52), (2022,51)]
+    # convert ['2022,52', '2022,51'] to [[2022, 52], [2022, 51]]
     return [[safe_int(x), safe_int(y)] for (x, y) in [yr.split(',') for yr in string_year_rounds]]

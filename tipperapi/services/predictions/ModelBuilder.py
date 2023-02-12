@@ -73,7 +73,8 @@ class ModelBuilder:
             return None
 
     def get_team_ids(self):
-        return self.session.query(Team).with_entities(Team.team_identifier).all()
+        teams = self.session.query(Team).all()
+        return [t.team_identifier for t in teams]
 
     def save_to_db(self, model_record):
         self.session.add(model_record)
