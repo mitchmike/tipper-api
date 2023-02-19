@@ -70,7 +70,7 @@ def test_post_build_model(app, client, admin_user, monkeypatch):
     data = ImmutableMultiDict(
         [('hidden', ''), ('model_type', 'LinearRegression'), ('model_strategy', 'pcnt_diff'), ('feature', 'kicks'),
          ('feature', 'handballs'), ('target_variable', 'score')])
-    monkeypatch.setattr(PcntDiffReader, "read", lambda *args, **kwargs: get_pcnt_diff_json())
+    monkeypatch.setattr(PcntDiffReader, "read", lambda *args, **kwargs: get_json_from_file())
     monkeypatch.setattr(ModelBuilder, "get_team_ids", lambda *args, **kwargs: ['kangaroos'])
     monkeypatch.setattr(ModelBuilder, "save_to_file", lambda *args, **kwargs: None)  # TODO - should stop this method from running in all tests
     with client:
@@ -124,7 +124,7 @@ def test_rebuild(app, monkeypatch):
                        ['LM', 'pcntdiff', ['kicks'], 'score', True]
                    ]
                    )
-        monkeypatch.setattr(PcntDiffReader, "read", lambda *args, **kwargs: get_pcnt_diff_json())
+        monkeypatch.setattr(PcntDiffReader, "read", lambda *args, **kwargs: get_json_from_file())
         monkeypatch.setattr(ModelBuilder, "get_team_ids", lambda *args, **kwargs: ['kangaroos'])
         monkeypatch.setattr(ModelBuilder, "save_to_file", lambda *args, **kwargs: None)
         model_mgmt_api.rebuild()
@@ -134,11 +134,3 @@ def test_rebuild(app, monkeypatch):
             assert not [model for model in models if model.id == 1][0].active
             assert not [model for model in models if model.id == 2][0].active
             assert [model for model in models if model.id == 3][0].active
-
-
-def get_pcnt_diff_json():
-    with open(get_file_resource_path('pcnt_diff_data.json')) as json_file:
-        json_pcnt_diff = json.load(json_file)
-        return json_pcnt_diff
-
-

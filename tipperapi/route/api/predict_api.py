@@ -46,10 +46,11 @@ def get_prediction(user_id, team, opp, model_features, target_variable, team_yea
     prediction = cache.get(cache_key)
     if prediction is None:
         with new_session() as db_session:
-            predictor = ResultPredictor(db_session, user_id, team, opp,
+            predictor = ResultPredictor(user_id, team, opp,
                                         'LinearRegression', 'pcnt_diff',
                                         model_features,
-                                        target_variable)
+                                        target_variable,
+                                        db_session)
             prediction = predictor.get_prediction(team_year_rounds, opp_year_rounds)
             cache.set(cache_key, prediction, timeout=5 * 60)
     return prediction

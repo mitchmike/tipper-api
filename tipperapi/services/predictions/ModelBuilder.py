@@ -40,6 +40,9 @@ class ModelBuilder:
         data = []
         try:
             team_ids = self.get_team_ids()
+            if len(team_ids) == 0:
+                LOGGER.error(f"No teams found, cannot build model for {self}")
+                return None
             for team_identifier in team_ids:
                 for game in reader.read(self.session, team_identifier):
                     data.append(game)
@@ -110,11 +113,19 @@ class ModelBuilder:
                         tncount_LossPredicted += 1
                     else:
                         fpcount_LossNotPredicted += 1
-            accuracy = (tpcount_WinPredicted + tncount_LossPredicted) / len(predicted)
-            # positiveprediction value
-            precision = tpcount_WinPredicted / (tpcount_WinPredicted + fpcount_LossNotPredicted)
-            # true positive rate
-            recall = tpcount_WinPredicted / (tpcount_WinPredicted + fncount_WinNotPredicted)
+            accuracy = 0
+            precision = 0
+            recall = 0
+            try:
+                accuracy = (tpcount_WinPredicted + tncount_LossPredicted) / len(predicted)
+                # positiveprediction value
+                precision = tpcount_WinPredicted / (tpcount_WinPredicted + fpcount_LossNotPredicted)
+                # true positive rate
+                recall = tpcount_WinPredicted / (tpcount_WinPredicted + fncount_WinNotPredicted)
+            except ZeroDivisionError as e:
+                LOGGER.warning(
+                    f"Could not analyse model due to having not enough data. Win / Loss predicted / not is zero "
+                    f"leading to the following error: {e}, {traceback.format_exc()}")
             results = {
                 'accuracy': accuracy,
                 'precision': precision,

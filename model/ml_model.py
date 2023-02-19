@@ -23,10 +23,11 @@ class MLModel(Base):
     def __init__(self):
         self.features = []
         self.created_at = datetime.now()
+        self.active = True
 
     def __repr__(self):
         return "<MLModel(id='%s', model_type='%s', model_strategy='%s', " \
-               "fields='%s', target_variable='%s', results='%s', " \
+               "features='%s', target_variable='%s', results='%s', " \
                "score='%s', file_name='%s', " \
                "active='%s', created_at='%s')>" % (self.id, self.model_type, self.model_strategy, self.features,
                                                    self.target_variable,

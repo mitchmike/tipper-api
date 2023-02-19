@@ -1,0 +1,42 @@
+[
+    {
+        "game_id": 10333,
+        "year": 2021,
+        "round_number": 1,
+        "team_id": "kangaroos",
+        "opponent": "port-adelaide-power",
+        "home_game": 1,
+        "win": 0,
+        "kicks": -0.1572052401746725,
+        "handballs": 0.07534246575342465,
+        "disposals": -0.06666666666666667,
+        "marks": -0.11494252873563218
+    },
+    {
+        "game_id": 10550,
+        "year": 2022,
+        "round_number": 1,
+        "team_id": "kangaroos",
+        "opponent": "hawthorn-hawks",
+        "home_game": 0,
+        "win": 0,
+        "kicks": 0.018779342723004695,
+        "handballs": -0.19480519480519481,
+        "disposals": -0.07084468664850137,
+        "marks": 0.052083333333333336
+    },
+    {
+        "game_id": 10341,
+        "year": 2021,
+        "round_number": 2,
+        "team_id": "kangaroos",
+        "opponent": "gold-coast-suns",
+        "home_game": 0,
+        "win": 0,
+        "score": 37,
+        "kicks": -0.3047945205479452,
+        "handballs": 0.11486486486486487,
+        "disposals": -0.16363636363636364,
+        "marks": -0.2956521739130435
+    }
+]

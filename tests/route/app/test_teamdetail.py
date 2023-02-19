@@ -16,7 +16,7 @@ def test_get_team_detail_no_team(app, client, standard_user):
 def test_get_team_detail(app, client, standard_user, monkeypatch):
     monkeypatch.setattr(teamdetail, "get_team", lambda *args, **kwargs: create_team())
     monkeypatch.setattr(teamdetail, "get_games", lambda *args, **kwargs: [create_game(), create_game()])
-    monkeypatch.setattr(teamdetail, "get_pcnt_diff_for_chart", lambda *args, **kwargs: get_pcnt_diff_json())
+    monkeypatch.setattr(teamdetail, "get_pcnt_diff_for_chart", lambda *args, **kwargs: get_json_from_file())
     with client:
         response = client.get('/teamdetail?team=richmond-tigers')
         assert response.status_code == 200
@@ -34,7 +34,7 @@ def test_get_team_detail(app, client, standard_user, monkeypatch):
 def test_post_team_detail(app, client, standard_user, monkeypatch):
     monkeypatch.setattr(teamdetail, "get_team", lambda *args, **kwargs: create_team())
     monkeypatch.setattr(teamdetail, "get_games", lambda *args, **kwargs: [create_game(), create_game()])
-    monkeypatch.setattr(teamdetail, "get_pcnt_diff_for_chart", lambda *args, **kwargs: get_pcnt_diff_json())
+    monkeypatch.setattr(teamdetail, "get_pcnt_diff_for_chart", lambda *args, **kwargs: get_json_from_file())
     with client:
         data = ImmutableMultiDict([('team', 'richmond-tigers'), ('stat', 'kicks'), ('stat', 'handballs')])
         response = client.post('/teamdetail', data=data)

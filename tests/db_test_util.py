@@ -1,3 +1,4 @@
+import json
 import os
 
 import pandas
@@ -9,6 +10,13 @@ USER_COL_NAMES = ['id', 'email', 'password', 'roles']
 TEAM_COL_NAMES = ['id', 'city', 'name', 'team_identifier', 'active_in_competition']
 GAME_COL_NAMES = ['id', 'home_team', 'away_team', 'venue', 'crowd', 'home_score', 'away_score', 'winner', 'year',
                   'round_number']
+
+
+def get_json_from_file(data_json='pcnt_diff_data.json'):
+    with open(get_file_resource_path(data_json)) as json_file:
+        json_pcnt_diff = json.load(json_file)
+        return json_pcnt_diff
+
 
 def get_file_resource_path(file_name):
     test_root_dir = os.path.dirname(__file__)

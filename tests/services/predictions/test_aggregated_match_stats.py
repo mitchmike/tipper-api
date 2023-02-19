@@ -5,7 +5,7 @@ from model import Player, MatchStatsPlayer
 from tipperapi.services.predictions.aggregated_match_stats import get_pcnt_diff
 
 
-def test_get_pcnt_diff(app):
+def test_get_pcnt_diff_atest(app):
     year_rounds = [(2021, 1), (2021, 2), (2021, 3)]
     # add game data
     add_data_obj_array(app, [

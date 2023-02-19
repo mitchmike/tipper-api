@@ -1,6 +1,9 @@
+from datetime import datetime
+
 from werkzeug.datastructures import ImmutableMultiDict
 
 from db_test_util import *
+from model import Player, MatchStatsPlayer
 from tipperapi.route.api import select_api, predict_api
 from tipperapi.route.app import predict
 from tipperapi.schema.games.game_schema import GameSchema
@@ -59,7 +62,43 @@ def test_predict_post(app, client, standard_user, monkeypatch):
     with client:
         response = client.post('/predict', data=data)
         assert response.status_code == 200
-        # result table is present
+        # assert result table is present
+        assert b'<h1>Result</h1>' in response.data
+
+
+def test_predict_post_atest(app, client, standard_user):
+    add_data_obj_array(app, [
+        create_game(1, 'richmond-tigers', 'geelong-cats', year=2022, round_number=18),
+        create_game(2, 'richmond-tigers', 'geelong-cats', year=2022, round_number=19),
+        create_game(3, 'richmond-tigers', 'geelong-cats', year=2022, round_number=20)
+    ])
+    # add teams
+    add_data_obj(app, create_team())
+    # add player data
+    add_data(app, Player, ['id', 'name_key', 'DOB'], [1, 'bruce-willis', datetime.now()])
+    # add matchstats data
+    add_data_array(app, MatchStatsPlayer, ['player_id', 'game_id', 'team', 'kicks', 'handballs'],
+                   [
+                       # round 1: even stats
+                       [1, 1, 'richmond-tigers', 32, 10],
+                       [1, 1, 'geelong-cats', 32, 10],
+                       # round 2: double stats
+                       [1, 2, 'richmond-tigers', 16, 10],
+                       [1, 2, 'geelong-cats', 32, 5],
+                       # round 3: zero stats
+                       [1, 3, 'richmond-tigers', 0, 10],
+                       [1, 3, 'geelong-cats', 32, 0]
+                   ]
+                   )
+    data = ImmutableMultiDict(
+        [('team', 'richmond-tigers'), ('opponent', 'geelong-cats'), ('selected_features', 'kicks'),
+         ('selected_features', 'handballs'), ('target_variable', 'win'),
+         ('team_year_rounds', '2022, 20'), ('team_year_rounds', '2022, 19'),
+         ('opp_year_rounds', '2022, 20'), ('opp_year_rounds', '2022, 19')])
+    with client:
+        response = client.post('/predict', data=data)
+        assert response.status_code == 200
+        # assert result table is present
         assert b'<h1>Result</h1>' in response.data
 
 
