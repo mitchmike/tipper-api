@@ -87,6 +87,8 @@ class ModelBuilder:
         ts = time.time_ns()
         file_name = self.model_type + "_" + str(ts) + ".sav"
         file_path = os.path.join(self.model_file_path, file_name)
+        if not os.path.isdir(self.model_file_path):
+            os.makedirs(self.model_file_path)
         LOGGER.info(f'saving to file {file_path}')
         joblib.dump(model, file_path)
         model_record.file_name = file_path
